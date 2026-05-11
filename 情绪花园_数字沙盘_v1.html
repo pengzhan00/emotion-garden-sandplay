@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌱 情绪花园 — 我的沙盘世界</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { overflow: hidden; font-family: 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif; background: #87CEEB; }
+
+  #canvas-container { width: 100vw; height: 100vh; display: block; }
+
+  /* 标题 */
+  #title {
+    position: absolute; top: 18px; left: 50%; transform: translateX(-50%);
+    font-size: 26px; font-weight: 700; color: #fff;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.3);
+    background: rgba(255,255,255,0.15); backdrop-filter: blur(8px);
+    padding: 10px 30px; border-radius: 50px;
+    letter-spacing: 2px; user-select: none; white-space: nowrap;
+    z-index: 10; border: 1px solid rgba(255,255,255,0.2);
+  }
+
+  /* 提示信息 */
+  #hint {
+    position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%);
+    color: rgba(255,255,255,0.7); font-size: 13px;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.3);
+    text-align: center; pointer-events: none; z-index: 5;
+    background: rgba(0,0,0,0.2); padding: 6px 18px; border-radius: 20px;
+    backdrop-filter: blur(4px);
+    transition: opacity 0.8s;
+  }
+
+  /* 底部工具栏 */
+  #toolbar {
+    position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 10px; z-index: 10;
+    background: rgba(255,255,255,0.15); backdrop-filter: blur(12px);
+    padding: 12px 20px; border-radius: 50px;
+    border: 1px solid rgba(255,255,255,0.25);
+    flex-wrap: wrap; justify-content: center;
+  }
+  #toolbar button {
+    padding: 8px 18px; border: none; border-radius: 25px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s; font-family: inherit;
+    color: #fff; background: rgba(255,255,255,0.2);
+    letter-spacing: 1px;
+  }
+  #toolbar button:hover {
+    transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+  }
+  #toolbar button:active { transform: scale(0.95); }
+  #btn-add { background: #4CAF50; color: #fff; }
+  #btn-add:hover { background: #45a049; }
+  #btn-clear { background: #ff7043; color: #fff; }
+  #btn-clear:hover { background: #f4511e; }
+  #btn-mood { background: #FFD700; color: #5D4037; }
+  #btn-mood:hover { background: #FFC107; }
+
+  /* 信息弹窗 */
+  #info-panel {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    background: rgba(255,255,255,0.95); backdrop-filter: blur(16px);
+    border-radius: 20px; padding: 28px 32px;
+    max-width: 420px; width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    z-index: 100; display: none;
+    border: 1px solid rgba(255,255,255,0.5);
+  }
+  #info-panel .icon { font-size: 48px; text-align: center; margin-bottom: 8px; }
+  #info-panel .name { font-size: 22px; font-weight: 700; text-align: center; margin-bottom: 6px; color: #333; }
+  #info-panel .meaning { font-size: 15px; color: #666; text-align: center; margin-bottom: 14px; }
+  #info-panel .tip-label { font-size: 13px; font-weight: 600; color: #4CAF50; margin-bottom: 4px; }
+  #info-panel .tip { font-size: 15px; color: #444; line-height: 1.6; padding: 10px 14px;
+    background: #f0fdf4; border-radius: 12px; border-left: 3px solid #4CAF50; }
+  #info-panel .close-btn {
+    display: block; margin: 16px auto 0;
+    padding: 8px 28px; border: none; border-radius: 20px;
+    background: #4CAF50; color: #fff; font-size: 14px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+  }
+  #info-panel .close-btn:hover { background: #45a049; }
+  #info-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.3);
+    z-index: 99; display: none;
+  }
+
+  /* 欢迎引导 */
+  #welcome-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    z-index: 200; display: flex; align-items: center; justify-content: center;
+  }
+  #welcome-card {
+    background: rgba(255,255,255,0.97); border-radius: 24px;
+    padding: 36px 32px; max-width: 440px; width: 90%;
+    text-align: center; box-shadow: 0 24px 80px rgba(0,0,0,0.3);
+  }
+  #welcome-card h2 { font-size: 24px; margin-bottom: 8px; color: #333; }
+  #welcome-card .sub { font-size: 14px; color: #888; margin-bottom: 20px; }
+  #welcome-card p { font-size: 15px; color: #555; line-height: 1.7; margin-bottom: 10px; text-align: left; }
+  #welcome-card .start-btn {
+    margin-top: 16px; padding: 12px 40px; border: none; border-radius: 25px;
+    background: linear-gradient(135deg, #4CAF50, #66BB6A);
+    color: #fff; font-size: 16px; font-weight: 700; cursor: pointer;
+    font-family: inherit; letter-spacing: 2px;
+  }
+  #welcome-card .start-btn:hover { transform: scale(1.03); }
+
+  /* 心情记录弹窗 */
+  #mood-dialog {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    background: rgba(255,255,255,0.95); backdrop-filter: blur(16px);
+    border-radius: 20px; padding: 28px 32px;
+    max-width: 400px; width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    z-index: 100; display: none;
+    border: 1px solid rgba(255,255,255,0.5);
+  }
+  #mood-dialog h3 { font-size: 20px; text-align: center; margin-bottom: 16px; color: #333; }
+  #mood-dialog .mood-btns { display: flex; gap: 10px; justify-content: center; margin-bottom: 16px; flex-wrap: wrap; }
+  #mood-dialog .mood-btn {
+    width: 56px; height: 56px; border-radius: 50%; border: 3px solid transparent;
+    font-size: 26px; cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
+    background: #f5f5f5;
+  }
+  #mood-dialog .mood-btn:hover { transform: scale(1.15); }
+  #mood-dialog .mood-btn.selected { border-color: #333; transform: scale(1.1); }
+  #mood-dialog textarea {
+    width: 100%; padding: 10px 14px; border: 2px solid #e0e0e0;
+    border-radius: 12px; font-size: 14px; font-family: inherit;
+    resize: none; height: 70px; outline: none;
+    transition: border-color 0.2s;
+  }
+  #mood-dialog textarea:focus { border-color: #4CAF50; }
+  #mood-dialog .submit-row { display: flex; gap: 10px; margin-top: 12px; justify-content: flex-end; }
+  #mood-dialog .submit-row button {
+    padding: 8px 20px; border: none; border-radius: 20px;
+    font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  #mood-dialog .mood-cancel { background: #e0e0e0; color: #666; }
+  #mood-dialog .mood-ok { background: #FFD700; color: #5D4037; }
+  #mood-dialog .mood-ok:hover { background: #FFC107; }
+
+  @media (max-width: 600px) {
+    #title { font-size: 18px; padding: 8px 16px; top: 12px; white-space: normal; }
+    #toolbar { padding: 10px 14px; gap: 6px; }
+    #toolbar button { font-size: 12px; padding: 6px 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 标题 -->
+<div id="title">🌱 情绪花园 — 我的沙盘世界</div>
+
+<!-- 3D容器 -->
+<div id="canvas-container"></div>
+
+<!-- 底部提示 -->
+<div id="hint">🖱️ 点击沙具了解它的心理学寓意 · 拖拽旋转 · 滚轮缩放</div>
+
+<!-- 底部工具栏 -->
+<div id="toolbar">
+  <button id="btn-add">✨ 添加新沙具</button>
+  <button id="btn-mood">🌸 记录我的心情</button>
+  <button id="btn-clear">🗑️ 清空沙盘</button>
+</div>
+
+<!-- 信息弹窗遮罩 -->
+<div id="info-overlay"></div>
+
+<!-- 信息弹窗 -->
+<div id="info-panel">
+  <div class="icon" id="info-icon">☀️</div>
+  <div class="name" id="info-name">太阳</div>
+  <div class="meaning" id="info-meaning">象征积极情绪</div>
+  <div class="tip-label">💡 情绪管理小贴士</div>
+  <div class="tip" id="info-tip">每天记录三件让你开心的小事。</div>
+  <button class="close-btn" id="info-close">我知道了 👍</button>
+</div>
+
+<!-- 心情记录弹窗 -->
+<div id="mood-dialog">
+  <h3>🌸 记录此刻心情</h3>
+  <div class="mood-btns">
+    <button class="mood-btn" data-mood="happy" style="border-color: #FFD700;background:#FFF8E0;">😊</button>
+    <button class="mood-btn" data-mood="calm" style="border-color: #87CEEB;background:#E8F4FD;">😌</button>
+    <button class="mood-btn" data-mood="sad" style="border-color: #A9A9A9;background:#F0F0F0;">😢</button>
+    <button class="mood-btn" data-mood="angry" style="border-color: #FF6B6B;background:#FFF0F0;">😤</button>
+  </div>
+  <textarea id="mood-text" placeholder="想写点什么？写一写你的感受…"></textarea>
+  <div class="submit-row">
+    <button class="mood-cancel" id="mood-cancel">取消</button>
+    <button class="mood-ok" id="mood-ok">种下一朵花 🌸</button>
+  </div>
+</div>
+
+<!-- 欢迎引导 -->
+<div id="welcome-overlay">
+  <div id="welcome-card">
+    <h2>🌱 欢迎来到情绪花园</h2>
+    <div class="sub">你的专属沙盘世界</div>
+    <p>🎯 <b>点击</b>沙盘中的沙具，了解每个元素的心理学寓意和情绪管理小贴士。</p>
+    <p>➕ <b>添加新沙具</b>，丰富你的情绪花园。</p>
+    <p>🌸 <b>记录心情</b>，沙盘上会开出一朵属于你的花。</p>
+    <p>🔄 <b>拖拽旋转</b>视角，<b>滚轮缩放</b>查看细节。</p>
+    <button class="start-btn" id="welcome-start">开始探索 🌟</button>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+// ============ 沙具数据 ============
+const ITEMS_DATA = [
+  {
+    id: 'sun', icon: '☀️', name: '太阳', color: '#FFD700',
+    meaning: '象征积极情绪与希望',
+    tip: '每天记录三件让你感到开心或感激的小事。这能帮你训练大脑关注美好，提升幸福感。'
+  },
+  {
+    id: 'cloud', icon: '🌧️', name: '乌云', color: '#78909C',
+    meaning: '象征负面情绪与压力',
+    tip: '当你感到难过时，试试"4-4-6呼吸法"：吸气4秒，屏住4秒，缓慢呼气6秒。重复3次。'
+  },
+  {
+    id: 'house', icon: '🏠', name: '小屋', color: '#FF8A65',
+    meaning: '象征安全感与避风港',
+    tip: '想象一个让你完全放松的安全空间——可以是真实的房间，也可以是心中的角落。压力大时，闭上眼睛在那里待一会儿。'
+  },
+  {
+    id: 'tree', icon: '🌳', name: '大树', color: '#66BB6A',
+    meaning: '象征成长与韧性',
+    tip: '失败不是终点，而是成长的机会。问自己："这次经历让我学到了什么？下次可以怎么做？"'
+  },
+  {
+    id: 'bridge', icon: '🌉', name: '桥梁', color: '#8D6E63',
+    meaning: '象征沟通与求助',
+    tip: '当你需要帮助时，勇敢地告诉信任的人。说出"我需要你的帮助"不是软弱，而是力量。'
+  },
+  {
+    id: 'pillow', icon: '🧸', name: '抱枕', color: '#CE93D8',
+    meaning: '象征自我安抚与关爱',
+    tip: '给自己一个温暖的拥抱（交叉双臂拍拍肩膀），或者做一件让你感到舒适的小事：喝杯热饮、听首歌、散步五分钟。'
+  }
+];
+
+// 心情 => 花颜色
+const MOOD_COLORS = {
+  happy: 0xFFD700,
+  calm:  0x87CEEB,
+  sad:   0xA9A9A9,
+  angry: 0xFF6B6B
+};
+const MOOD_NAMES = { happy: '开心', calm: '平静', sad: '难过', angry: '生气' };
+
+// ============ 场景设置 ============
+const container = document.getElementById('canvas-container');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87CEEB);
+scene.fog = new THREE.Fog(0x87CEEB, 25, 50);
+
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(8, 7, 10);
+camera.lookAt(0, 0, 0);
+
+// 渲染器
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+container.appendChild(renderer.domElement);
+
+// CSS2D 渲染器
+const labelRenderer = new CSS2DRenderer();
+labelRenderer.setSize(window.innerWidth, window.innerHeight);
+labelRenderer.domElement.style.position = 'absolute';
+labelRenderer.domElement.style.top = '0';
+labelRenderer.domElement.style.pointerEvents = 'none';
+container.appendChild(labelRenderer.domElement);
+
+// 控制器
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.minDistance = 4;
+controls.maxDistance = 25;
+controls.maxPolarAngle = Math.PI / 2.1;
+controls.target.set(0, 0, 0);
+
+// ============ 灯光 ============
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+scene.add(ambientLight);
+
+const hemiLight = new THREE.HemisphereLight(0x87CEEB, 0x6B8E23, 0.6);
+scene.add(hemiLight);
+
+const dirLight = new THREE.DirectionalLight(0xFFF8E0, 1.2);
+dirLight.position.set(8, 15, 5);
+dirLight.castShadow = true;
+dirLight.shadow.mapSize.width = 2048;
+dirLight.shadow.mapSize.height = 2048;
+dirLight.shadow.camera.near = 0.5;
+dirLight.shadow.camera.far = 30;
+dirLight.shadow.camera.left = -15;
+dirLight.shadow.camera.right = 15;
+dirLight.shadow.camera.top = 15;
+dirLight.shadow.camera.bottom = -15;
+scene.add(dirLight);
+
+const fillLight = new THREE.DirectionalLight(0x87CEEB, 0.3);
+fillLight.position.set(-5, 5, -5);
+scene.add(fillLight);
+
+// ============ 地面 ============
+const groundGeom = new THREE.CircleGeometry(12, 64);
+const groundMat = new THREE.MeshStandardMaterial({
+  color: 0x8BC34A,
+  roughness: 0.8,
+  metalness: 0.0,
+});
+const ground = new THREE.Mesh(groundGeom, groundMat);
+ground.rotation.x = -Math.PI / 2;
+ground.position.y = -0.05;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// 装饰小草 (简单的圆柱体散布)
+for (let i = 0; i < 80; i++) {
+  const bladeGeom = new THREE.CylinderGeometry(0.03, 0.05, 0.15 + Math.random() * 0.15, 4);
+  const bladeMat = new THREE.MeshStandardMaterial({
+    color: new THREE.Color().setHSL(0.28 + Math.random() * 0.05, 0.6, 0.35 + Math.random() * 0.15)
+  });
+  const blade = new THREE.Mesh(bladeGeom, bladeMat);
+  const angle = Math.random() * Math.PI * 2;
+  const dist = 1 + Math.random() * 5;
+  blade.position.set(Math.cos(angle) * dist, 0, Math.sin(angle) * dist);
+  blade.rotation.x = Math.random() * 0.2 - 0.1;
+  blade.castShadow = true;
+  scene.add(blade);
+}
+
+// ============ 沙具生成 ============
+const sandObjects = []; // 存放所有沙具mesh { mesh, label, data }
+const sandGroup = new THREE.Group(); // 用于清空
+scene.add(sandGroup);
+
+function createLabel(text, bgColor = 'rgba(255,255,255,0.85)') {
+  const div = document.createElement('div');
+  div.textContent = text;
+  div.style.cssText = `
+    background: ${bgColor}; backdrop-filter: blur(4px);
+    color: #333; font-size: 13px; font-weight: 600;
+    padding: 3px 10px; border-radius: 12px;
+    font-family: 'PingFang SC', 'Noto Sans SC', sans-serif;
+    pointer-events: none; user-select: none;
+    border: 1px solid rgba(255,255,255,0.5);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  `;
+  return new CSS2DObject(div);
+}
+
+function createItemMesh(data) {
+  const group = new THREE.Group();
+  const color = new THREE.Color(data.color);
+  
+  switch (data.id) {
+    case 'sun': {
+      const sphere = new THREE.Mesh(
+        new THREE.SphereGeometry(0.5, 16, 16),
+        new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.2, roughness: 0.3 })
+      );
+      sphere.position.y = 0.5;
+      sphere.castShadow = true;
+      group.add(sphere);
+      // rays
+      for (let i = 0; i < 12; i++) {
+        const angle = (i / 12) * Math.PI * 2;
+        const ray = new THREE.Mesh(
+          new THREE.ConeGeometry(0.08, 0.3, 6),
+          new THREE.MeshStandardMaterial({ color: 0xFFF176, emissive: 0xFFF176, emissiveIntensity: 0.1 })
+        );
+        ray.position.set(Math.cos(angle) * 0.8, 0.5 + Math.sin(angle) * 0.3, Math.sin(angle) * 0.8);
+        ray.rotation.x = Math.PI / 2;
+        ray.rotation.z = -angle;
+        group.add(ray);
+      }
+      break;
+    }
+    case 'cloud': {
+      const mat = new THREE.MeshStandardMaterial({ color: 0x90A4AE, roughness: 0.7 });
+      const p1 = new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 12), mat); p1.position.set(-0.4, 0.5, 0); p1.castShadow = true; group.add(p1);
+      const p2 = new THREE.Mesh(new THREE.SphereGeometry(0.55, 12, 12), mat); p2.position.set(0.2, 0.65, 0); p2.castShadow = true; group.add(p2);
+      const p3 = new THREE.Mesh(new THREE.SphereGeometry(0.4, 12, 12), mat); p3.position.set(0.6, 0.45, 0); p3.castShadow = true; group.add(p3);
+      // raindrops
+      const rainMat = new THREE.MeshStandardMaterial({ color: 0x4FC3F7, transparent: true, opacity: 0.6 });
+      for (let i = 0; i < 5; i++) {
+        const drop = new THREE.Mesh(new THREE.SphereGeometry(0.04, 6, 6), rainMat);
+        drop.position.set(-0.3 + Math.random() * 0.8, 0.1 - Math.random() * 0.15, 0.1 - Math.random() * 0.2);
+        group.add(drop);
+      }
+      break;
+    }
+    case 'house': {
+      const wallMat = new THREE.MeshStandardMaterial({ color, roughness: 0.6 });
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.8), wallMat);
+      wall.position.y = 0.25; wall.castShadow = true; group.add(wall);
+      const roofMat = new THREE.MeshStandardMaterial({ color: 0xE53935, roughness: 0.5 });
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(0.6, 0.35, 4), roofMat);
+      roof.position.y = 0.65; roof.rotation.y = Math.PI / 4; roof.castShadow = true; group.add(roof);
+      // door
+      const doorMat = new THREE.MeshStandardMaterial({ color: 0x795548 });
+      const door = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.25, 0.05), doorMat);
+      door.position.set(0, 0.15, 0.41); group.add(door);
+      break;
+    }
+    case 'tree': {
+      const trunkMat = new THREE.MeshStandardMaterial({ color: 0x8D6E63, roughness: 0.8 });
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 0.5, 8), trunkMat);
+      trunk.position.y = 0.25; trunk.castShadow = true; group.add(trunk);
+      const crownMat = new THREE.MeshStandardMaterial({ color, roughness: 0.5 });
+      const crown = new THREE.Mesh(new THREE.SphereGeometry(0.4, 12, 12), crownMat);
+      crown.position.y = 0.7; crown.castShadow = true; group.add(crown);
+      const crown2 = new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 10), crownMat);
+      crown2.position.set(0.2, 0.55, 0.15); crown2.castShadow = true; group.add(crown2);
+      break;
+    }
+    case 'bridge': {
+      const bridgeMat = new THREE.MeshStandardMaterial({ color, roughness: 0.7 });
+      // arch using torus
+      const arch = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.06, 8, 16, Math.PI), bridgeMat);
+      arch.position.y = 0.35; arch.rotation.x = 0; arch.castShadow = true; group.add(arch);
+      // path
+      const pathMat = new THREE.MeshStandardMaterial({ color: 0xBCAAA4, roughness: 0.9 });
+      const path = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.03, 0.2), pathMat);
+      path.position.y = 0.015; group.add(path);
+      // pillars
+      const pillarMat = new THREE.MeshStandardMaterial({ color: 0xA1887F });
+      const pL = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.08, 8), pillarMat);
+      pL.position.set(-0.4, 0.04, 0); group.add(pL);
+      const pR = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.08, 8), pillarMat);
+      pR.position.set(0.4, 0.04, 0); group.add(pR);
+      break;
+    }
+    case 'pillow': {
+      const pillowMat = new THREE.MeshStandardMaterial({ color, roughness: 0.6 });
+      const pillow = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), pillowMat);
+      pillow.scale.set(1, 0.6, 0.9);
+      pillow.position.y = 0.25; pillow.castShadow = true; group.add(pillow);
+      // small heart
+      const heartMat = new THREE.MeshStandardMaterial({ color: 0xFF80AB });
+      const heart = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), heartMat);
+      heart.position.set(0.15, 0.35, 0.2); group.add(heart);
+      const heart2 = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), heartMat);
+      heart2.position.set(-0.15, 0.35, 0.2); group.add(heart2);
+      break;
+    }
+  }
+  
+  return group;
+}
+
+function placeItem(data, x, z) {
+  const meshGroup = createItemMesh(data);
+  meshGroup.position.set(x, 0, z);
+  // Slight random rotation
+  meshGroup.rotation.y = Math.random() * Math.PI * 2;
+  sandGroup.add(meshGroup);
+
+  const label = createLabel(`${data.icon} ${data.name}`);
+  label.position.set(x, 1.2, z);
+  sandGroup.add(label);
+
+  sandObjects.push({ mesh: meshGroup, label, data, position: new THREE.Vector3(x, 0, z) });
+}
+
+// 初始放置
+const initialPositions = [
+  [-2.5, 0], [0, -2.5], [2.5, 0], [0, 2.5], [-1.8, -1.8], [1.8, 1.8]
+];
+ITEMS_DATA.forEach((data, i) => {
+  if (i < initialPositions.length) {
+    placeItem(data, initialPositions[i][0], initialPositions[i][1]);
+  }
+});
+
+// ============ 点击交互 (Raycaster) ============
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+let selectedMood = 'happy';
+
+renderer.domElement.addEventListener('click', (event) => {
+  const rect = renderer.domElement.getBoundingClientRect();
+  pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+  raycaster.setFromCamera(pointer, camera);
+
+  // Collect all meshes in sandGroup
+  const meshes = [];
+  sandGroup.children.forEach(child => {
+    child.traverse((node) => {
+      if (node.isMesh) meshes.push(node);
+    });
+  });
+
+  const intersects = raycaster.intersectObjects(meshes);
+  if (intersects.length > 0) {
+    // Find which sandObject this belongs to
+    const hit = intersects[0].object;
+    for (const obj of sandObjects) {
+      let found = false;
+      obj.mesh.traverse((node) => {
+        if (node === hit) found = true;
+      });
+      if (found) {
+        showInfo(obj.data);
+        break;
+      }
+    }
+  }
+});
+
+// ============ 信息弹窗 ============
+function showInfo(data) {
+  document.getElementById('info-icon').textContent = data.icon;
+  document.getElementById('info-name').textContent = data.name;
+  document.getElementById('info-meaning').textContent = data.meaning;
+  document.getElementById('info-tip').textContent = data.tip;
+  document.getElementById('info-panel').style.display = 'block';
+  document.getElementById('info-overlay').style.display = 'block';
+}
+
+function hideInfo() {
+  document.getElementById('info-panel').style.display = 'none';
+  document.getElementById('info-overlay').style.display = 'none';
+}
+
+document.getElementById('info-close').addEventListener('click', hideInfo);
+document.getElementById('info-overlay').addEventListener('click', hideInfo);
+
+// ============ 添加新沙具 ============
+document.getElementById('btn-add').addEventListener('click', () => {
+  const data = ITEMS_DATA[Math.floor(Math.random() * ITEMS_DATA.length)];
+  const angle = Math.random() * Math.PI * 2;
+  const dist = 1 + Math.random() * 4;
+  const x = Math.cos(angle) * dist;
+  const z = Math.sin(angle) * dist;
+  placeItem(data, x, z);
+});
+
+// ============ 清空沙盘 ============
+document.getElementById('btn-clear').addEventListener('click', () => {
+  // Remove all children from sandGroup
+  while (sandGroup.children.length > 0) {
+    const child = sandGroup.children[0];
+    child.traverse((node) => {
+      if (node.geometry) node.geometry.dispose();
+      if (node.material) node.material.dispose();
+    });
+    sandGroup.remove(child);
+  }
+  sandObjects.length = 0;
+  // Re-place the initial 6
+  ITEMS_DATA.forEach((data, i) => {
+    if (i < initialPositions.length) {
+      placeItem(data, initialPositions[i][0], initialPositions[i][1]);
+    }
+  });
+});
+
+// ============ 心情记录 ============
+document.getElementById('btn-mood').addEventListener('click', () => {
+  document.getElementById('mood-dialog').style.display = 'block';
+  selectedMood = 'happy';
+  document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelector('.mood-btn[data-mood="happy"]').classList.add('selected');
+});
+
+document.querySelectorAll('.mood-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedMood = btn.dataset.mood;
+  });
+});
+
+document.getElementById('mood-cancel').addEventListener('click', () => {
+  document.getElementById('mood-dialog').style.display = 'none';
+});
+
+document.getElementById('mood-ok').addEventListener('click', () => {
+  const text = document.getElementById('mood-text').value.trim() || `我的心情：${MOOD_NAMES[selectedMood]}`;
+  createFlower(selectedMood, text);
+  document.getElementById('mood-dialog').style.display = 'none';
+  document.getElementById('mood-text').value = '';
+});
+
+function createFlower(mood, text) {
+  const color = MOOD_COLORS[mood] || 0xFFD700;
+  const flowerGroup = new THREE.Group();
+
+  // Stem
+  const stemMat = new THREE.MeshStandardMaterial({ color: 0x4CAF50 });
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 0.6, 6), stemMat);
+  stem.position.y = 0.3; stem.castShadow = true;
+  flowerGroup.add(stem);
+
+  // Petals
+  const petalMat = new THREE.MeshStandardMaterial({ color, roughness: 0.4, emissive: color, emissiveIntensity: 0.05 });
+  const numPetals = 6;
+  for (let i = 0; i < numPetals; i++) {
+    const angle = (i / numPetals) * Math.PI * 2;
+    const petal = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), petalMat);
+    petal.position.set(Math.cos(angle) * 0.12, 0.65, Math.sin(angle) * 0.12);
+    petal.scale.set(1.2, 0.6, 1.2);
+    flowerGroup.add(petal);
+  }
+
+  // Center
+  const centerMat = new THREE.MeshStandardMaterial({ color: 0xFFEB3B });
+  const center = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), centerMat);
+  center.position.y = 0.65;
+  flowerGroup.add(center);
+
+  // Place on sand
+  const angle = Math.random() * Math.PI * 2;
+  const dist = 0.5 + Math.random() * 4;
+  const x = Math.cos(angle) * dist;
+  const z = Math.sin(angle) * dist;
+  flowerGroup.position.set(x, 0, z);
+  flowerGroup.rotation.y = Math.random() * Math.PI * 2;
+  sandGroup.add(flowerGroup);
+
+  // Label with mood text
+  const label = createLabel(`🌸 ${text.substring(0, 20)}${text.length > 20 ? '...' : ''}`, 'rgba(255,255,255,0.9)');
+  label.position.set(x, 1.0, z);
+  sandGroup.add(label);
+
+  sandObjects.push({ mesh: flowerGroup, label, data: { name: '心情之花', icon: '🌸', meaning: `情绪：${MOOD_NAMES[mood]}`, tip: '每一种情绪都是正常的，学会接纳它，然后温柔地照顾自己。' }, position: new THREE.Vector3(x, 0, z) });
+
+  // Hint feedback
+  document.getElementById('hint').textContent = `🌸 已种下一朵${MOOD_NAMES[mood]}之花！`;
+  setTimeout(() => {
+    document.getElementById('hint').textContent = '🖱️ 点击沙具了解它的心理学寓意 · 拖拽旋转 · 滚轮缩放';
+  }, 3000);
+}
+
+// ============ 欢迎引导 ============
+document.getElementById('welcome-start').addEventListener('click', () => {
+  document.getElementById('welcome-overlay').style.display = 'none';
+});
+
+// ============ 窗口自适应 ============
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  labelRenderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ============ 动画循环 ============
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+  labelRenderer.render(scene, camera);
+}
+animate();
+
+console.log('🌱 情绪花园已加载！');
+</script>
+</body>
+</html>

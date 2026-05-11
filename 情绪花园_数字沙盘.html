@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌱 情绪花园 — 我的沙盘世界</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { overflow:hidden; font-family:'ZCOOL KuaiLe','PingFang SC','Noto Sans SC',sans-serif; background:linear-gradient(180deg,#FF9A9E 0%,#FAD0C4 30%,#a8e6cf 100%); }
+  #canvas-container{width:100vw;height:100vh;display:block}
+
+  /* ===== 标题 ===== */
+  #title{position:absolute;top:16px;left:50%;transform:translateX(-50%);font-size:28px;color:#fff;text-shadow:0 3px 16px rgba(255,105,135,0.5),0 1px 4px rgba(0,0,0,0.2);background:linear-gradient(135deg,rgba(255,255,255,0.25),rgba(255,255,255,0.1));backdrop-filter:blur(12px);padding:10px 32px;border-radius:50px;letter-spacing:3px;user-select:none;white-space:nowrap;z-index:10;border:1.5px solid rgba(255,255,255,0.35);animation:titleFloat 3s ease-in-out infinite;box-shadow:0 8px 32px rgba(255,105,135,0.2)}
+  @keyframes titleFloat{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-4px)}}
+
+  /* ===== 提示 ===== */
+  #hint{position:absolute;bottom:85px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.85);font-size:13px;text-shadow:0 2px 10px rgba(0,0,0,0.3);text-align:center;pointer-events:none;z-index:5;background:rgba(0,0,0,0.15);padding:6px 20px;border-radius:20px;backdrop-filter:blur(6px);transition:opacity 0.8s;font-family:'PingFang SC',sans-serif;letter-spacing:1px;pointer-events:none}
+
+  /* ===== 工具栏 ===== */
+  #toolbar{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);display:flex;gap:10px;z-index:10;background:linear-gradient(135deg,rgba(255,255,255,0.3),rgba(255,255,255,0.1));backdrop-filter:blur(16px);padding:12px 22px;border-radius:50px;border:1.5px solid rgba(255,255,255,0.3);flex-wrap:wrap;justify-content:center;box-shadow:0 8px 32px rgba(0,0,0,0.1)}
+  #toolbar button{padding:9px 20px;border:none;border-radius:50px;font-size:14px;cursor:pointer;transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);font-family:'ZCOOL KuaiLe','PingFang SC',sans-serif;letter-spacing:2px;box-shadow:0 4px 15px rgba(0,0,0,0.1)}
+  #toolbar button:hover{transform:translateY(-4px) scale(1.05);box-shadow:0 8px 25px rgba(0,0,0,0.18)}
+  #toolbar button:active{transform:scale(0.92)}
+  #btn-add{background:linear-gradient(135deg,#43e97b,#38f9d7);color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.15)}
+  #btn-mood{background:linear-gradient(135deg,#f093fb,#f5576c);color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.15)}
+  #btn-clear{background:linear-gradient(135deg,#4facfe,#00f2fe);color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.15)}
+  #btn-diary{background:linear-gradient(135deg,#FFD700,#FFA000);color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.15)}
+  #btn-reminder{background:linear-gradient(135deg,#a18cd1,#fbc2eb);color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.15)}
+
+  /* ===== 信息弹窗 ===== */
+  #info-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:99;display:none;backdrop-filter:blur(4px)}
+  #info-panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.9);background:linear-gradient(160deg,#fff5f7,#fff);border-radius:28px;padding:30px 32px;max-width:420px;width:90%;box-shadow:0 25px 80px rgba(255,105,135,0.25),0 8px 30px rgba(0,0,0,0.12);z-index:100;display:none;border:2px solid rgba(255,200,210,0.4);animation:popIn 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards}
+  @keyframes popIn{from{transform:translate(-50%,-50%) scale(0.8);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
+  #info-panel .icon{font-size:56px;text-align:center;margin-bottom:4px;animation:iconBounce 0.5s ease-out}
+  @keyframes iconBounce{0%{transform:scale(0)}50%{transform:scale(1.3)}100%{transform:scale(1)}}
+  #info-panel .name{font-size:24px;text-align:center;margin-bottom:2px;color:#5D4037}
+  #info-panel .meaning{font-size:14px;color:#e91e63;text-align:center;margin-bottom:16px;opacity:0.8;letter-spacing:1px}
+  #info-panel .tip-label{font-size:13px;color:#FF6B9D;margin-bottom:6px;letter-spacing:2px}
+  #info-panel .tip{font-size:15px;color:#444;line-height:1.8;padding:14px 18px;background:linear-gradient(135deg,#fce4ec,#f3e5f5);border-radius:16px;border-left:4px solid #FF6B9D;font-family:'PingFang SC',sans-serif}
+  #info-panel .close-btn{display:block;margin:18px auto 0;padding:10px 36px;border:none;border-radius:50px;background:linear-gradient(135deg,#FF6B9D,#c44dff);color:#fff;font-size:16px;cursor:pointer;letter-spacing:2px;box-shadow:0 4px 15px rgba(255,107,157,0.3);transition:all 0.2s}
+  #info-panel .close-btn:hover{transform:scale(1.05);box-shadow:0 6px 20px rgba(255,107,157,0.4)}
+
+  /* ===== 心情记录弹窗 ===== */
+  #mood-dialog{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.9);background:linear-gradient(160deg,#fff5f7,#fff);border-radius:28px;padding:30px 32px;max-width:400px;width:90%;box-shadow:0 25px 80px rgba(255,105,135,0.25);z-index:100;display:none;border:2px solid rgba(255,200,210,0.4);animation:popIn 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards}
+  #mood-dialog h3{font-size:22px;text-align:center;margin-bottom:4px;color:#5D4037;letter-spacing:2px}
+  #mood-dialog .mood-time{font-size:12px;text-align:center;color:#999;margin-bottom:14px;letter-spacing:1px}
+  #mood-dialog .mood-btns{display:flex;gap:12px;justify-content:center;margin-bottom:16px;flex-wrap:wrap}
+  #mood-dialog .mood-btn{width:60px;height:60px;border-radius:50%;border:3px solid transparent;font-size:28px;cursor:pointer;transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);display:flex;align-items:center;justify-content:center;background:#f5f5f5;box-shadow:0 4px 12px rgba(0,0,0,0.06)}
+  #mood-dialog .mood-btn:hover{transform:scale(1.2) translateY(-3px)}
+  #mood-dialog .mood-btn.selected{transform:scale(1.15);box-shadow:0 6px 20px rgba(0,0,0,0.15)}
+  #mood-dialog textarea{width:100%;padding:12px 16px;border:2px solid #f0e0e6;border-radius:16px;font-size:14px;font-family:'PingFang SC',sans-serif;resize:none;height:75px;outline:none;transition:border-color 0.3s;background:#fef7f9}
+  #mood-dialog textarea:focus{border-color:#FF6B9D;box-shadow:0 0 0 4px rgba(255,107,157,0.1)}
+  #mood-dialog .submit-row{display:flex;gap:10px;margin-top:14px;justify-content:flex-end}
+  #mood-dialog .submit-row button{padding:9px 24px;border:none;border-radius:50px;font-size:15px;cursor:pointer;font-family:'ZCOOL KuaiLe','PingFang SC',sans-serif;letter-spacing:2px;transition:all 0.2s}
+  #mood-dialog .mood-cancel{background:#e0e0e0;color:#666}
+  #mood-dialog .mood-ok{background:linear-gradient(135deg,#f093fb,#f5576c);color:#fff;box-shadow:0 4px 15px rgba(245,87,108,0.3)}
+  #mood-dialog .mood-ok:hover{transform:scale(1.03)}
+
+  /* ===== 日记面板 ===== */
+  #diary-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:99;display:none;backdrop-filter:blur(6px)}
+  #diary-panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.9);width:480px;max-width:94vw;max-height:80vh;background:linear-gradient(160deg,#fff8f0,#fff);border-radius:28px;box-shadow:0 30px 80px rgba(0,0,0,0.25);z-index:100;display:none;border:2px solid rgba(255,200,180,0.4);animation:popIn 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards;flex-direction:column;overflow:hidden}
+  #diary-panel.show{display:flex}
+  #diary-header{padding:20px 24px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f0e0d8;flex-shrink:0}
+  #diary-header h2{font-size:22px;color:#5D4037;letter-spacing:2px}
+  #diary-header .diary-close{width:36px;height:36px;border:none;border-radius:50%;background:#f0e0d8;font-size:18px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;color:#8D6E63}
+  #diary-header .diary-close:hover{background:#e0c8c0;transform:scale(1.1)}
+  #diary-filter{display:flex;gap:6px;padding:10px 24px;border-bottom:1px solid #f0e0d8;flex-shrink:0}
+  #diary-filter button{padding:4px 14px;border:1.5px solid #e0c8c0;border-radius:20px;background:transparent;font-size:13px;cursor:pointer;transition:all 0.2s;font-family:'ZCOOL KuaiLe','PingFang SC',sans-serif;color:#8D6E63;letter-spacing:1px}
+  #diary-filter button:hover{background:#f5e8e0}
+  #diary-filter button.active{background:#FF6B9D;color:#fff;border-color:#FF6B9D}
+  #diary-stats{display:flex;gap:14px;padding:8px 24px 4px;flex-shrink:0;font-size:12px;color:#999;font-family:'PingFang SC',sans-serif}
+  #diary-entries{flex:1;overflow-y:auto;padding:10px 24px 20px;min-height:100px}
+  #diary-entries::-webkit-scrollbar{width:4px}
+  #diary-entries::-webkit-scrollbar-thumb{background:#e0c8c0;border-radius:4px}
+  .diary-entry{display:flex;gap:12px;padding:12px 14px;margin-bottom:8px;border-radius:16px;background:#fef9f5;border:1px solid #f5e8e0;transition:all 0.2s;align-items:flex-start;cursor:default}
+  .diary-entry:hover{background:#fcf0ea;transform:translateX(4px)}
+  .diary-entry .de-mood{font-size:28px;flex-shrink:0;width:40px;text-align:center;line-height:1}
+  .diary-entry .de-body{flex:1;min-width:0}
+  .diary-entry .de-time{font-size:12px;color:#bbb;font-family:'PingFang SC',sans-serif;margin-bottom:2px}
+  .diary-entry .de-text{font-size:14px;color:#555;line-height:1.6;font-family:'PingFang SC',sans-serif;word-break:break-word}
+  .diary-entry .de-delete{background:none;border:none;color:#ddd;cursor:pointer;font-size:16px;padding:2px 4px;flex-shrink:0;transition:color 0.2s;line-height:1}
+  .diary-entry .de-delete:hover{color:#FF6B6B}
+  .diary-empty{text-align:center;padding:40px 0;color:#ccc;font-size:16px;letter-spacing:2px}
+  .diary-empty .big{font-size:48px;display:block;margin-bottom:10px}
+  .diary-export{padding:6px 14px;border:none;border-radius:20px;background:#f5e8e0;font-size:12px;cursor:pointer;font-family:'PingFang SC',sans-serif;color:#8D6E63;transition:all 0.2s}
+  .diary-export:hover{background:#e8d5cc}
+
+  /* ===== 提醒设置 ===== */
+  #reminder-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:99;display:none;backdrop-filter:blur(6px)}
+  #reminder-panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.9);width:360px;max-width:90vw;background:linear-gradient(160deg,#f3e8ff,#fff);border-radius:28px;padding:28px 30px;box-shadow:0 30px 80px rgba(0,0,0,0.25);z-index:100;display:none;border:2px solid rgba(200,180,255,0.4);animation:popIn 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards}
+  #reminder-panel.show{display:block}
+  #reminder-panel h3{font-size:20px;text-align:center;color:#5D4037;margin-bottom:16px;letter-spacing:2px}
+  #reminder-panel label{display:block;font-size:14px;color:#666;margin-bottom:6px;font-family:'PingFang SC',sans-serif}
+  .reminder-options{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
+  .reminder-options label{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:14px;border:2px solid #e8d8f0;cursor:pointer;transition:all 0.2s;font-family:'PingFang SC',sans-serif;font-size:15px;color:#555}
+  .reminder-options label:hover{border-color:#ce93d8;background:#faf0ff}
+  .reminder-options label input[type=radio]{accent-color:#ce93d8;width:16px;height:16px}
+  #reminder-panel .submit-row{display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
+  #reminder-panel .submit-row button{padding:9px 24px;border:none;border-radius:50px;font-size:15px;cursor:pointer;font-family:'ZCOOL KuaiLe','PingFang SC',sans-serif;letter-spacing:2px;transition:all 0.2s}
+  #reminder-cancel{background:#e0e0e0;color:#666}
+  #reminder-save{background:linear-gradient(135deg,#a18cd1,#fbc2eb);color:#fff;box-shadow:0 4px 15px rgba(161,140,209,0.3)}
+
+  /* ===== 提醒通知 ===== */
+  #reminder-notice{position:absolute;top:70px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#fff5f7,rgba(255,255,255,0.95));backdrop-filter:blur(12px);padding:14px 28px;border-radius:50px;box-shadow:0 8px 30px rgba(255,105,135,0.2);z-index:50;display:none;border:1.5px solid rgba(255,200,210,0.4);animation:noticeSlide 0.4s cubic-bezier(0.34,1.56,0.64,1);cursor:pointer;white-space:nowrap;font-size:16px;color:#5D4037;letter-spacing:2px}
+  @keyframes noticeSlide{from{transform:translateX(-50%) translateY(-20px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
+  #reminder-notice span{color:#FF6B9D}
+
+  /* ===== 引导页 ===== */
+  #welcome-overlay{position:fixed;inset:0;background:radial-gradient(ellipse at center,rgba(0,0,0,0.3),rgba(0,0,0,0.55));z-index:200;display:flex;align-items:center;justify-content:center}
+  #welcome-card{background:linear-gradient(160deg,#fff5f7,#fff0f6,#fce4ec);border-radius:32px;padding:38px 34px;max-width:440px;width:90%;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,0.3);border:2px solid rgba(255,255,255,0.5);animation:popIn 0.5s cubic-bezier(0.34,1.56,0.64,1)}
+  #welcome-card h2{font-size:28px;margin-bottom:2px;color:#5D4037;letter-spacing:2px}
+  #welcome-card .sub{font-size:14px;color:#e91e63;margin-bottom:20px;letter-spacing:3px;opacity:0.7}
+  #welcome-card p{font-size:15px;color:#555;line-height:1.8;margin-bottom:10px;text-align:left;padding-left:8px;font-family:'PingFang SC',sans-serif}
+  #welcome-card .start-btn{margin-top:18px;padding:14px 48px;border:none;border-radius:50px;background:linear-gradient(135deg,#FF6B9D,#c44dff);color:#fff;font-size:18px;cursor:pointer;letter-spacing:3px;box-shadow:0 6px 25px rgba(255,107,157,0.35);transition:all 0.25s}
+  #welcome-card .start-btn:hover{transform:scale(1.05) translateY(-2px);box-shadow:0 10px 35px rgba(255,107,157,0.4)}
+
+  @media(max-width:600px){
+    #title{font-size:20px;padding:8px 18px;top:12px;white-space:normal}
+    #toolbar{padding:10px 14px;gap:6px}
+    #toolbar button{font-size:12px;padding:7px 12px}
+    #diary-panel{max-height:90vh}
+    #diary-entries{padding:8px 16px 14px}
+    .diary-entry{padding:10px 12px}
+  }
+</style>
+</head>
+<body>
+
+<div id="title">🌱 情绪花园 — 我的沙盘世界</div>
+<div id="canvas-container"></div>
+<div id="hint">💫 点击获取小贴士 · 拖拽移动沙具 · 记录心情 · 写日记</div>
+
+<!-- 提醒通知 -->
+<div id="reminder-notice">🌸 <span>到时间记录心情啦</span> ✨ 点我打开 ~</div>
+
+<!-- 工具栏 -->
+<div id="toolbar">
+  <button id="btn-add">✨ 添加</button>
+  <button id="btn-mood">🌸 写心情</button>
+  <button id="btn-diary">📖 日记</button>
+  <button id="btn-reminder">⏰ 提醒</button>
+  <button id="btn-clear">🌀 清空</button>
+</div>
+
+<!-- 信息弹窗 -->
+<div id="info-overlay"></div>
+<div id="info-panel">
+  <div class="icon" id="info-icon">☀️</div>
+  <div class="name" id="info-name">太阳</div>
+  <div class="meaning" id="info-meaning">象征积极情绪</div>
+  <div class="tip-label">💗 青春期专属小贴士</div>
+  <div class="tip" id="info-tip">每天给自己一个「小成就清单」</div>
+  <button class="close-btn" id="info-close">我知道啦 ✨</button>
+</div>
+
+<!-- 心情记录 -->
+<div id="mood-dialog">
+  <h3>🌸 此刻心情怎么样？</h3>
+  <div class="mood-time" id="mood-timestamp">⏱️ 记录时间：--</div>
+  <div class="mood-btns">
+    <button class="mood-btn" data-mood="happy" style="border-color:#FFD700;background:#FFF8E0;">😊</button>
+    <button class="mood-btn" data-mood="calm" style="border-color:#87CEEB;background:#E8F4FD;">😌</button>
+    <button class="mood-btn" data-mood="sad" style="border-color:#A9A9A9;background:#F0F0F0;">😢</button>
+    <button class="mood-btn" data-mood="angry" style="border-color:#FF6B6B;background:#FFF0F0;">😤</button>
+  </div>
+  <textarea id="mood-text" placeholder="写下此刻的感受…（可选）"></textarea>
+  <div class="submit-row">
+    <button class="mood-cancel" id="mood-cancel">算了</button>
+    <button class="mood-ok" id="mood-ok">种下小花 🌸</button>
+  </div>
+</div>
+
+<!-- 日记面板 -->
+<div id="diary-overlay"></div>
+<div id="diary-panel">
+  <div id="diary-header">
+    <h2>📖 情绪日记</h2>
+    <button class="diary-close" id="diary-close">✕</button>
+  </div>
+  <div id="diary-filter">
+    <button data-filter="all" class="active">全部</button>
+    <button data-filter="today">今天</button>
+    <button data-filter="week">本周</button>
+    <button class="diary-export" id="btn-export">📥 导出</button>
+  </div>
+  <div id="diary-stats"></div>
+  <div id="diary-entries"></div>
+</div>
+
+<!-- 提醒设置 -->
+<div id="reminder-overlay"></div>
+<div id="reminder-panel">
+  <h3>⏰ 心情提醒</h3>
+  <label style="font-family:'PingFang SC',sans-serif;font-size:14px;color:#666;margin-bottom:10px;display:block;">每隔多久提醒你记录心情？</label>
+  <div class="reminder-options">
+    <label><input type="radio" name="reminder" value="0"> 不提醒</label>
+    <label><input type="radio" name="reminder" value="30"> 每 30 分钟</label>
+    <label><input type="radio" name="reminder" value="60"> 每小时</label>
+    <label><input type="radio" name="reminder" value="120"> 每 2 小时</label>
+    <label><input type="radio" name="reminder" value="240"> 每 4 小时</label>
+    <label><input type="radio" name="reminder" value="480"> 每 8 小时</label>
+    <label><input type="radio" name="reminder" value="1440"> 每天一次</label>
+  </div>
+  <div class="submit-row">
+    <button id="reminder-cancel">取消</button>
+    <button id="reminder-save">保存设置 💜</button>
+  </div>
+</div>
+
+<!-- 引导 -->
+<div id="welcome-overlay">
+  <div id="welcome-card">
+    <h2>🌱 欢迎来到情绪花园</h2>
+    <div class="sub">⋆｡°✩ 专属于你的沙盘世界 ✩°｡⋆</div>
+    <p>🎯 <b>点击</b>沙具 → 青春期专属小贴士</p>
+    <p>✋ <b>拖拽</b>沙具 → 自由布置你的花园</p>
+    <p>🌸 <b>记录心情</b> → 沙盘开花 + 自动记入日记</p>
+    <p>📖 <b>情绪日记</b> → 回顾心情变化轨迹</p>
+    <p>⏰ <b>提醒</b> → 定时提醒你记录心情</p>
+    <button class="start-btn" id="welcome-start">开始探索 🌟</button>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+// ==================== 沙具数据 ====================
+const ITEMS_DATA = [
+  { id:'sun', icon:'☀️', name:'太阳', color:0xFFD700, emissive:0xFFA000,
+    meaning:'象征积极情绪与希望',
+    tip:'每天给自己一个「小成就清单」—— 可以是今天听懂了一道数学题、主动和同学打了招呼、或者按时完成了作业。青春期的每一次小进步，都值得被看见和肯定。' },
+  { id:'cloud', icon:'🌧️', name:'乌云', color:0x7986CB, emissive:0x5C6BC0,
+    meaning:'象征负面情绪与压力',
+    tip:'青春期情绪像过山车很正常！试试「5-4-3-2-1」着陆法：说出你看到的5样东西、摸到的4样、听到的3样、闻到的2样、尝到的1样。这能帮你从情绪风暴中回到当下。' },
+  { id:'house', icon:'🏠', name:'小屋', color:0xFF8A80, emissive:0xFF5252,
+    meaning:'象征安全感与避风港',
+    tip:'青春期的你，需要一个属于自己的「安全角」。可以是你房间的某个角落，摆上你喜欢的抱枕、耳机、一本日记。当感觉被全世界不理解时，去那里待10分钟——和自己待在一起，就是最好的充电。' },
+  { id:'tree', icon:'🌳', name:'大树', color:0x69F0AE, emissive:0x00E676,
+    meaning:'象征成长与韧性',
+    tip:'考试没考好？被老师或父母批评了？记住：你现在遇到的每一个挫折，都是在给你的「心理肌肉」增加力量。问自己：「这件事教会了我什么？一个月后回头看，它还会这么重要吗？」' },
+  { id:'bridge', icon:'🌉', name:'桥梁', color:0xCE93D8, emissive:0xBA68C8,
+    meaning:'象征沟通与求助',
+    tip:'觉得没人理解你？试试「我句式」跟父母或朋友沟通：「我感到……是因为……我希望……」。比如：「我感到很沮丧，是因为我觉得你们只关心成绩，我希望你们也能听听我的想法。」表达真实感受不是顶嘴，而是长大的标志。' },
+  { id:'pillow', icon:'🧸', name:'抱枕', color:0xF48FB1, emissive:0xEC407A,
+    meaning:'象征自我安抚与关爱',
+    tip:'青春期很容易陷入自我否定。当你觉得自己「不够好」时，试试「写给好朋友的一封信」—— 你最好的朋友正处于你所经历的一切，你会对他说什么？现在，把这句话说给自己听。自我关怀，是青春期最温柔的铠甲。' }
+];
+const MOOD_COLORS = { happy:0xFFD700, calm:0x87CEEB, sad:0xA9A9A9, angry:0xFF6B6B };
+const MOOD_EMOJIS = { happy:'😊', calm:'😌', sad:'😢', angry:'😤' };
+const MOOD_NAMES = { happy:'开心', calm:'平静', sad:'难过', angry:'生气' };
+const MOOD_LABELS = { happy:'🌻', calm:'💙', sad:'🩶', angry:'❤️' };
+const STORAGE_KEY = 'hermes_garden_diary';
+
+// ==================== 场景 ====================
+const container = document.getElementById('canvas-container');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xfc9a9e);
+
+const camera = new THREE.PerspectiveCamera(40, window.innerWidth/window.innerHeight, 0.1, 100);
+camera.position.set(9, 7, 11);
+camera.lookAt(0, 0, 0);
+
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+container.appendChild(renderer.domElement);
+
+// 后处理
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.25, 0.4, 0.1);
+composer.addPass(bloomPass);
+
+// CSS2D
+const labelRenderer = new CSS2DRenderer();
+labelRenderer.setSize(window.innerWidth, window.innerHeight);
+labelRenderer.domElement.style.position='absolute';labelRenderer.domElement.style.top='0';labelRenderer.domElement.style.pointerEvents='none';
+container.appendChild(labelRenderer.domElement);
+
+// 相机控制
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.dampingFactor = 0.08;
+controls.minDistance = 4; controls.maxDistance = 22;
+controls.maxPolarAngle = Math.PI / 2.2; controls.target.set(0, 0.3, 0);
+
+// ==================== 灯光 ====================
+const ambient = new THREE.AmbientLight(0xffe0e0, 0.35);
+scene.add(ambient);
+const hemi = new THREE.HemisphereLight(0xffb3c6, 0x90EE90, 0.55);
+scene.add(hemi);
+const dir = new THREE.DirectionalLight(0xffe4b5, 1.4);
+dir.position.set(6,12,4); dir.castShadow=true;
+dir.shadow.mapSize.width=2048; dir.shadow.mapSize.height=2048;
+dir.shadow.camera.near=0.5; dir.shadow.camera.far=30;
+dir.shadow.camera.left=-15; dir.shadow.camera.right=15;
+dir.shadow.camera.top=15; dir.shadow.camera.bottom=-15;
+scene.add(dir);
+const rim = new THREE.DirectionalLight(0xd500f9, 0.4);
+rim.position.set(-4,6,-6); scene.add(rim);
+const fill = new THREE.DirectionalLight(0xffab91, 0.35);
+fill.position.set(-3,4,5); scene.add(fill);
+
+// ==================== 地面 ====================
+function makeGroundTex(){
+  const c=document.createElement('canvas');c.width=512;c.height=512;
+  const ctx=c.getContext('2d');
+  const g=ctx.createRadialGradient(256,256,0,256,256,256);
+  g.addColorStop(0,'#b2df8a');g.addColorStop(0.6,'#8bc34a');g.addColorStop(1,'#7cb342');
+  ctx.fillStyle=g;ctx.fillRect(0,0,512,512);
+  for(let i=0;i<60;i++){
+    const fx=Math.random()*512,fy=Math.random()*512,s=2+Math.random()*4;
+    ctx.beginPath();ctx.arc(fx,fy,s,0,Math.PI*2);
+    ctx.fillStyle=`hsla(${80+Math.random()*30},60%,75%,0.3)`;ctx.fill();
+    ctx.beginPath();ctx.arc(fx,fy,s*0.3,0,Math.PI*2);
+    ctx.fillStyle=`hsla(${100+Math.random()*30},70%,85%,0.5)`;ctx.fill();
+  }
+  ctx.strokeStyle='rgba(255,255,255,0.04)';ctx.lineWidth=1;
+  for(let i=0;i<32;i++){const p=i*16;ctx.beginPath();ctx.moveTo(p,0);ctx.lineTo(p,512);ctx.stroke();ctx.beginPath();ctx.moveTo(0,p);ctx.lineTo(512,p);ctx.stroke()}
+  const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(2,2);return t;
+}
+const ground=new THREE.Mesh(new THREE.CircleGeometry(14,64),new THREE.MeshStandardMaterial({map:makeGroundTex(),roughness:0.85,metalness:0}));
+ground.rotation.x=-Math.PI/2;ground.position.y=-0.05;ground.receiveShadow=true;scene.add(ground);
+
+// ==================== 粒子 ====================
+const PC=200,pGeom=new THREE.BufferGeometry(),pPos=new Float32Array(PC*3),pSizes=new Float32Array(PC),pOff=new Float32Array(PC);
+for(let i=0;i<PC;i++){const a=Math.random()*Math.PI*2,r=1+Math.random()*6;pPos[i*3]=Math.cos(a)*r;pPos[i*3+1]=0.5+Math.random()*3;pPos[i*3+2]=Math.sin(a)*r;pSizes[i]=0.03+Math.random()*0.06;pOff[i]=Math.random()*Math.PI*2}
+pGeom.setAttribute('position',new THREE.BufferAttribute(pPos,3));pGeom.setAttribute('size',new THREE.BufferAttribute(pSizes,1));
+const pc=document.createElement('canvas');pc.width=32;pc.height=32;
+const pctx=pc.getContext('2d'),pg=pctx.createRadialGradient(16,16,0,16,16,16);
+pg.addColorStop(0,'rgba(255,255,255,1)');pg.addColorStop(0.3,'rgba(255,215,0,0.8)');pg.addColorStop(1,'rgba(255,215,0,0)');
+pctx.fillStyle=pg;pctx.fillRect(0,0,32,32);
+const particles=new THREE.Points(pGeom,new THREE.PointsMaterial({size:0.15,map:new THREE.CanvasTexture(pc),blending:THREE.AdditiveBlending,depthWrite:false,transparent:true,opacity:0.7,color:0xffd54f}));
+scene.add(particles);
+
+// ==================== 沙具系统 ====================
+const sandObjects=[],sandGroup=new THREE.Group();scene.add(sandGroup);
+let floatTime=0;
+
+function makeLabel(text, bg='rgba(255,255,255,0.85)'){
+  const d=document.createElement('div');d.textContent=text;
+  d.style.cssText=`background:${bg};backdrop-filter:blur(6px);color:#5D4037;font-size:13px;padding:4px 12px;border-radius:20px;font-family:'ZCOOL KuaiLe','PingFang SC',sans-serif;pointer-events:none;user-select:none;white-space:nowrap;border:1px solid rgba(255,255,255,0.5);box-shadow:0 4px 12px rgba(0,0,0,0.08);letter-spacing:1px`;
+  return new CSS2DObject(d);
+}
+
+function buildMesh(data){
+  const g=new THREE.Group(),c=data.color,e=data.emissive||c;
+  switch(data.id){
+    case'sun':{
+      const s=new THREE.Mesh(new THREE.SphereGeometry(0.5,20,20),new THREE.MeshStandardMaterial({color:c,emissive:e,emissiveIntensity:0.25,roughness:0.25,metalness:0.1}));
+      s.position.y=0.5;s.castShadow=true;g.add(s);
+      const gl=new THREE.Mesh(new THREE.RingGeometry(0.55,0.72,24),new THREE.MeshBasicMaterial({color:0xFFF176,transparent:true,opacity:0.15,side:THREE.DoubleSide}));
+      gl.position.y=0.5;gl.rotation.x=-Math.PI/2;g.add(gl);
+      for(let i=0;i<12;i++){const a=(i/12)*Math.PI*2,r=new THREE.Mesh(new THREE.ConeGeometry(0.07,0.35,6),new THREE.MeshStandardMaterial({color:0xFFF176,emissive:0xFFD700,emissiveIntensity:0.15}));r.position.set(Math.cos(a)*0.85,0.5+Math.sin(a)*0.3,Math.sin(a)*0.85);r.rotation.x=Math.PI/2;r.rotation.z=-a;g.add(r)}
+      break;
+    }
+    case'cloud':{
+      const m=new THREE.MeshStandardMaterial({color:c,emissive:e,emissiveIntensity:0.1,roughness:0.5});
+      const p1=new THREE.Mesh(new THREE.SphereGeometry(0.45,14,14),m);p1.position.set(-0.4,0.55,0);p1.castShadow=true;g.add(p1);
+      const p2=new THREE.Mesh(new THREE.SphereGeometry(0.55,14,14),m);p2.position.set(0.2,0.7,0);p2.castShadow=true;g.add(p2);
+      const p3=new THREE.Mesh(new THREE.SphereGeometry(0.38,14,14),m);p3.position.set(0.6,0.48,0);p3.castShadow=true;g.add(p3);
+      const rm=new THREE.MeshStandardMaterial({color:0x90CAF9,emissive:0x64B5F6,emissiveIntensity:0.1,transparent:true,opacity:0.5});
+      for(let i=0;i<6;i++){const d=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.03,0.1,4),rm);d.position.set(-0.3+Math.random()*0.8,0.08-Math.random()*0.12,0.15-Math.random()*0.3);d.rotation.x=0.1;g.add(d)}
+      break;
+    }
+    case'house':{
+      const wm=new THREE.MeshStandardMaterial({color:c,roughness:0.4,emissive:e,emissiveIntensity:0.05});
+      const w=new THREE.Mesh(new THREE.BoxGeometry(0.8,0.5,0.8),wm);w.position.y=0.25;w.castShadow=true;g.add(w);
+      const rm=new THREE.MeshStandardMaterial({color:0xFF6B6B,emissive:0xFF1744,emissiveIntensity:0.05,roughness:0.3});
+      const r=new THREE.Mesh(new THREE.ConeGeometry(0.62,0.38,4),rm);r.position.y=0.68;r.rotation.y=Math.PI/4;r.castShadow=true;g.add(r);
+      const dm=new THREE.MeshStandardMaterial({color:0x8D6E63});const d=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.25,0.04),dm);d.position.set(0,0.15,0.41);g.add(d);
+      const wim=new THREE.MeshStandardMaterial({color:0xBBDEFB,emissive:0x90CAF9,emissiveIntensity:0.15});
+      const w1=new THREE.Mesh(new THREE.BoxGeometry(0.15,0.12,0.04),wim);w1.position.set(0.25,0.35,0.41);g.add(w1);
+      const w2=new THREE.Mesh(new THREE.BoxGeometry(0.15,0.12,0.04),wim);w2.position.set(-0.25,0.35,0.41);g.add(w2);
+      break;
+    }
+    case'tree':{
+      const tm=new THREE.MeshStandardMaterial({color:0x8D6E63,roughness:0.8});const tr=new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.14,0.5,8),tm);tr.position.y=0.25;tr.castShadow=true;g.add(tr);
+      const cm=new THREE.MeshStandardMaterial({color:c,emissive:e,emissiveIntensity:0.1,roughness:0.4});
+      const cr=new THREE.Mesh(new THREE.SphereGeometry(0.42,14,14),cm);cr.position.y=0.72;cr.castShadow=true;g.add(cr);
+      const cr2=new THREE.Mesh(new THREE.SphereGeometry(0.32,12,12),cm);cr2.position.set(0.22,0.58,0.15);cr2.castShadow=true;g.add(cr2);
+      const cr3=new THREE.Mesh(new THREE.SphereGeometry(0.28,12,12),cm);cr3.position.set(-0.2,0.55,-0.12);cr3.castShadow=true;g.add(cr3);
+      const am=new THREE.MeshStandardMaterial({color:0xFF5252,emissive:0xFF1744,emissiveIntensity:0.1});
+      for(let i=0;i<3;i++){const a=new THREE.Mesh(new THREE.SphereGeometry(0.04,6,6),am);const aa=Math.random()*Math.PI*2;a.position.set(Math.cos(aa)*0.25,0.65+Math.random()*0.15,Math.sin(aa)*0.25);g.add(a)}
+      break;
+    }
+    case'bridge':{
+      const bm=new THREE.MeshStandardMaterial({color:c,emissive:e,emissiveIntensity:0.05,roughness:0.5,metalness:0.1});
+      const ar=new THREE.Mesh(new THREE.TorusGeometry(0.52,0.06,10,18,Math.PI),bm);ar.position.y=0.38;ar.castShadow=true;g.add(ar);
+      const pm=new THREE.MeshStandardMaterial({color:0xD7CCC8,roughness:0.9});const p=new THREE.Mesh(new THREE.BoxGeometry(0.72,0.03,0.22),pm);p.position.y=0.015;g.add(p);
+      const plm=new THREE.MeshStandardMaterial({color:0xCE93D8,emissive:0xCE93D8,emissiveIntensity:0.05});
+      const pL=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.05,0.08,8),plm);pL.position.set(-0.42,0.04,0);g.add(pL);
+      const pR=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.05,0.08,8),plm);pR.position.set(0.42,0.04,0);g.add(pR);
+      const lm=new THREE.MeshStandardMaterial({color:0xFFD54F,emissive:0xFFC107,emissiveIntensity:0.3});
+      const lL=new THREE.Mesh(new THREE.SphereGeometry(0.05,8,8),lm);lL.position.set(-0.42,0.5,0);g.add(lL);
+      const lR=new THREE.Mesh(new THREE.SphereGeometry(0.05,8,8),lm);lR.position.set(0.42,0.5,0);g.add(lR);
+      break;
+    }
+    case'pillow':{
+      const pm=new THREE.MeshStandardMaterial({color:c,emissive:e,emissiveIntensity:0.08,roughness:0.5});
+      const p=new THREE.Mesh(new THREE.SphereGeometry(0.4,18,18),pm);p.scale.set(1,0.55,0.85);p.position.y=0.22;p.castShadow=true;g.add(p);
+      const hm=new THREE.MeshStandardMaterial({color:0xFF80AB,emissive:0xFF4081,emissiveIntensity:0.2});
+      for(let i=0;i<4;i++){const a=(i/4)*Math.PI*2+0.3;const h=new THREE.Mesh(new THREE.SphereGeometry(0.05,6,6),hm);h.position.set(Math.cos(a)*0.2,0.3,Math.sin(a)*0.2);g.add(h)}
+      const sm=new THREE.MeshStandardMaterial({color:0xFFD700,emissive:0xFFC107,emissiveIntensity:0.3});
+      const st=new THREE.Mesh(new THREE.OctahedronGeometry(0.06),sm);st.position.set(0,0.42,0);st.rotation.y=Math.PI/4;g.add(st);
+      break;
+    }
+  }
+  return g;
+}
+
+function placeItem(data, x, z, animateIn=false){
+  const mesh=buildMesh(data);mesh.position.set(x,0,z);mesh.rotation.y=Math.random()*Math.PI*2;
+  if(animateIn)mesh.scale.set(0,0,0);
+  sandGroup.add(mesh);
+  const label=makeLabel(`${data.icon} ${data.name}`);label.position.set(x,1.3,z);
+  sandGroup.add(label);
+  const obj={mesh,label,data,floatOffset:Math.random()*Math.PI*2,position:new THREE.Vector3(x,0,z),isFlower:false};
+  sandObjects.push(obj);
+  if(animateIn){const st=performance.now();function pa(t){const tt=Math.min((t-st)/400,1),e=1-Math.pow(1-tt,3);mesh.scale.setScalar(e);mesh.position.y=Math.sin(e*Math.PI)*0.3;if(tt<1)requestAnimationFrame(pa);else{mesh.position.y=0;mesh.scale.set(1,1,1)}}requestAnimationFrame(pa)}
+  return obj;
+}
+
+const initPos=[];for(let i=0;i<6;i++){const a=(i/6)*Math.PI*2-Math.PI/6+(Math.random()-0.5)*0.3,d=2.2+Math.random()*0.5;initPos.push([Math.cos(a)*d,Math.sin(a)*d])}
+ITEMS_DATA.forEach((d,i)=>{if(i<initPos.length)placeItem(d,initPos[i][0],initPos[i][1])});
+
+// ==================== 拖拽系统 ====================
+const groundPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0.05);
+const dragOffset=new THREE.Vector3();
+let isDragging=false,dragObj=null,dragStartPos=new THREE.Vector2();
+const dragThreshold=5; // pixels to distinguish click vs drag
+let dragMoved=false;
+
+function getGroundIntersect(event){
+  const rect=renderer.domElement.getBoundingClientRect();
+  const mx=((event.clientX-rect.left)/rect.width)*2-1;
+  const my=-((event.clientY-rect.top)/rect.height)*2+1;
+  const ray=new THREE.Raycaster();ray.setFromCamera(new THREE.Vector2(mx,my),camera);
+  const pt=new THREE.Vector3();ray.ray.intersectPlane(groundPlane,pt);
+  return pt;
+}
+
+function findDragTarget(event){
+  const rect=renderer.domElement.getBoundingClientRect();
+  const mx=((event.clientX-rect.left)/rect.width)*2-1;
+  const my=-((event.clientY-rect.top)/rect.height)*2+1;
+  const ray=new THREE.Raycaster();ray.setFromCamera(new THREE.Vector2(mx,my),camera);
+  const meshes=[];sandGroup.children.forEach(c=>{c.traverse(n=>{if(n.isMesh)meshes.push(n)})});
+  const hits=ray.intersectObjects(meshes);
+  if(hits.length>0){
+    for(const obj of sandObjects){
+      let found=false;obj.mesh.traverse(n=>{if(n===hits[0].object)found=true});
+      if(found)return obj;
+    }
+  }
+  return null;
+}
+
+renderer.domElement.addEventListener('pointerdown',(e)=>{
+  const target=findDragTarget(e);
+  if(target){
+    isDragging=true;dragObj=target;dragMoved=false;
+    dragStartPos.set(e.clientX,e.clientY);
+    controls.enabled=false;
+    const pt=getGroundIntersect(e);
+    dragOffset.copy(pt).sub(dragObj.mesh.position);
+    // lift object slightly
+    dragObj.mesh.position.y=0.15;
+  }
+});
+
+renderer.domElement.addEventListener('pointermove',(e)=>{
+  if(!isDragging||!dragObj)return;
+  const dx=e.clientX-dragStartPos.x,dy=e.clientY-dragStartPos.y;
+  if(Math.sqrt(dx*dx+dy*dy)>dragThreshold)dragMoved=true;
+  if(dragMoved){
+    const pt=getGroundIntersect(e);
+    if(pt){
+      const r=Math.sqrt(pt.x*pt.x+pt.z*pt.z);
+      if(r<6.5){
+        dragObj.mesh.position.x=pt.x-dragOffset.x;
+        dragObj.mesh.position.z=pt.z-dragOffset.z;
+      }
+    }
+  }
+});
+
+renderer.domElement.addEventListener('pointerup',()=>{
+  if(isDragging&&dragObj){
+    if(dragMoved){
+      // Finalize position
+      dragObj.mesh.position.y=0;
+      dragObj.label.position.x=dragObj.mesh.position.x;
+      dragObj.label.position.z=dragObj.mesh.position.z;
+    }else{
+      // Reset lift if no drag
+      dragObj.mesh.position.y=0;
+    }
+    controls.enabled=true;
+    isDragging=false;dragObj=null;
+  }
+});
+
+// Override click to check if dragged
+const origClickListener=renderer.domElement._listeners?.['click'];
+// We handle click manually via the pointerup with threshold check
+renderer.domElement.addEventListener('click',(e)=>{
+  if(dragMoved)return; // was a drag, not a click
+  const rect=renderer.domElement.getBoundingClientRect();
+  const mx=((e.clientX-rect.left)/rect.width)*2-1;
+  const my=-((e.clientY-rect.top)/rect.height)*2+1;
+  const ray=new THREE.Raycaster();ray.setFromCamera(new THREE.Vector2(mx,my),camera);
+  const meshes=[];sandGroup.children.forEach(c=>{c.traverse(n=>{if(n.isMesh)meshes.push(n)})});
+  const hits=ray.intersectObjects(meshes);
+  if(hits.length>0){
+    for(const obj of sandObjects){
+      let found=false;obj.mesh.traverse(n=>{if(n===hits[0].object)found=true});
+      if(found){
+        if(!obj._bouncing){
+          obj._bouncing=true;
+          obj.mesh.position.y=0;let f=0;
+          function db(){f++;const t=f/10;if(t>=1){obj.mesh.position.y=0;obj._bouncing=false;showInfo(obj.data);return}obj.mesh.position.y=Math.sin(t*Math.PI)*0.25;requestAnimationFrame(db)}
+          db();
+        }
+        break;
+      }
+    }
+  }
+});
+
+// ==================== 日记系统 (localStorage) ====================
+function getDiary(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY))||[]}catch{return[]}}
+function saveDiary(entries){localStorage.setItem(STORAGE_KEY,JSON.stringify(entries))}
+
+function addDiaryEntry(mood,text,timestamp){
+  const entries=getDiary();
+  entries.unshift({id:Date.now(),timestamp,mood,emoji:MOOD_EMOJIS[mood],text:text||'',color:MOOD_COLORS[mood]});
+  saveDiary(entries);
+  renderDiary(getActiveFilter());
+  updateReminderTime(); // reset reminder after recording
+}
+
+function deleteDiaryEntry(id){
+  let entries=getDiary();
+  entries=entries.filter(e=>e.id!==id);
+  saveDiary(entries);
+  renderDiary(getActiveFilter());
+}
+
+function getActiveFilter(){
+  const active=document.querySelector('#diary-filter .active');
+  return active?active.dataset.filter:'all';
+}
+
+function formatTime(ts){
+  const d=new Date(ts);
+  const pad=(n)=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+function isToday(ts){const d=new Date(ts),t=new Date();return d.getFullYear()===t.getFullYear()&&d.getMonth()===t.getMonth()&&d.getDate()===t.getDate()}
+function isThisWeek(ts){
+  const d=new Date(ts),t=new Date();
+  const getMon=(date)=>{const d=new Date(date);d.setDate(d.getDate()-(d.getDay()||7)+1);d.setHours(0,0,0,0);return d};
+  return d>=getMon(t);
+}
+
+function renderDiary(filter){
+  const entries=getDiary();
+  const container=document.getElementById('diary-entries');
+  const stats=document.getElementById('diary-stats');
+
+  let filtered=entries;
+  if(filter==='today')filtered=entries.filter(e=>isToday(e.timestamp));
+  else if(filter==='week')filtered=entries.filter(e=>isThisWeek(e.timestamp));
+
+  stats.textContent=`共 ${filtered.length} 条记录 · 最近记录：${filtered.length>0?formatTime(filtered[0].timestamp):'--'}`;
+
+  if(filtered.length===0){
+    container.innerHTML=`<div class="diary-empty"><span class="big">📝</span>还没有心情记录<br>去沙盘上种一朵花吧 🌸</div>`;
+    return;
+  }
+
+  container.innerHTML=filtered.map(e=>`
+    <div class="diary-entry">
+      <div class="de-mood">${e.emoji}</div>
+      <div class="de-body">
+        <div class="de-time">${formatTime(e.timestamp)} ${MOOD_LABELS[e.mood]||''} ${MOOD_NAMES[e.mood]||''}</div>
+        <div class="de-text">${e.text||'（没有写文字）'}</div>
+      </div>
+      <button class="de-delete" data-id="${e.id}" title="删除">✕</button>
+    </div>
+  `).join('');
+
+  // Delete handlers
+  container.querySelectorAll('.de-delete').forEach(btn=>{
+    btn.addEventListener('click',(ev)=>{
+      ev.stopPropagation();
+      const id=parseInt(btn.dataset.id);
+      deleteDiaryEntry(id);
+    });
+  });
+}
+
+// ==================== UI 事件 ====================
+function showInfo(data){
+  document.getElementById('info-icon').textContent=data.icon;
+  document.getElementById('info-name').textContent=data.name;
+  document.getElementById('info-meaning').textContent=data.meaning;
+  document.getElementById('info-tip').textContent=data.tip;
+  document.getElementById('info-panel').style.display='block';
+  document.getElementById('info-overlay').style.display='block';
+}
+function hideInfo(){
+  document.getElementById('info-panel').style.display='none';
+  document.getElementById('info-overlay').style.display='none';
+}
+document.getElementById('info-close').addEventListener('click',hideInfo);
+document.getElementById('info-overlay').addEventListener('click',hideInfo);
+
+document.getElementById('btn-add').addEventListener('click',()=>{
+  const d=ITEMS_DATA[Math.floor(Math.random()*ITEMS_DATA.length)];
+  const a=Math.random()*Math.PI*2,dist=1+Math.random()*4;
+  placeItem(d,Math.cos(a)*dist,Math.sin(a)*dist,true);
+});
+
+document.getElementById('btn-clear').addEventListener('click',()=>{
+  while(sandGroup.children.length>0){const c=sandGroup.children[0];c.traverse(n=>{if(n.geometry)n.geometry.dispose();if(n.material)n.material.dispose()});sandGroup.remove(c)}
+  sandObjects.length=0;
+  ITEMS_DATA.forEach((d,i)=>{placeItem(d,initPos[i][0],initPos[i][1])});
+});
+
+// ===== 心情记录 =====
+let selectedMood='happy';
+document.getElementById('btn-mood').addEventListener('click',()=>{
+  const now=new Date();
+  const pad=(n)=>String(n).padStart(2,'0');
+  document.getElementById('mood-timestamp').textContent=`⏱️ 记录时间：${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  document.getElementById('mood-dialog').style.display='block';
+  selectedMood='happy';
+  document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('selected'));
+  document.querySelector('.mood-btn[data-mood="happy"]').classList.add('selected');
+});
+
+document.querySelectorAll('.mood-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedMood=btn.dataset.mood;
+  });
+});
+document.getElementById('mood-cancel').addEventListener('click',()=>{document.getElementById('mood-dialog').style.display='none'});
+document.getElementById('mood-ok').addEventListener('click',()=>{
+  const text=document.getElementById('mood-text').value.trim();
+  const now=Date.now();
+  addDiaryEntry(selectedMood,text||`心情：${MOOD_NAMES[selectedMood]}`,now);
+  createFlower(selectedMood,text||`心情：${MOOD_NAMES[selectedMood]}`,now);
+  document.getElementById('mood-dialog').style.display='none';
+  document.getElementById('mood-text').value='';
+});
+
+// ===== 日记 =====
+document.getElementById('btn-diary').addEventListener('click',()=>{
+  document.getElementById('diary-panel').classList.add('show');
+  document.getElementById('diary-overlay').style.display='block';
+  renderDiary(getActiveFilter());
+});
+document.getElementById('diary-close').addEventListener('click',()=>{
+  document.getElementById('diary-panel').classList.remove('show');
+  document.getElementById('diary-overlay').style.display='none';
+});
+document.getElementById('diary-overlay').addEventListener('click',()=>{
+  document.getElementById('diary-panel').classList.remove('show');
+  document.getElementById('diary-overlay').style.display='none';
+});
+document.querySelectorAll('#diary-filter button[data-filter]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#diary-filter button[data-filter]').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    renderDiary(btn.dataset.filter);
+  });
+});
+document.getElementById('btn-export').addEventListener('click',()=>{
+  const entries=getDiary();
+  if(entries.length===0){document.getElementById('hint').textContent='📝 还没有日记可以导出哦~';setTimeout(()=>{document.getElementById('hint').textContent='💫 点击获取小贴士 · 拖拽移动沙具 · 记录心情 · 写日记'},3000);return}
+  let txt='== 情绪花园 · 心情日记 ==\n\n';
+  entries.forEach(e=>{txt+=`${formatTime(e.timestamp)} ${e.emoji} ${MOOD_NAMES[e.mood]}\n${e.text||'(无文字)'}\n\n`});
+  const blob=new Blob([txt],{type:'text/plain;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`情绪日记_${new Date().toISOString().slice(0,10)}.txt`;a.click();
+  URL.revokeObjectURL(a.href);
+  document.getElementById('hint').textContent='📥 日记已导出！';
+  setTimeout(()=>{document.getElementById('hint').textContent='💫 点击获取小贴士 · 拖拽移动沙具 · 记录心情 · 写日记'},3000);
+});
+
+// ===== 提醒设置 =====
+document.getElementById('btn-reminder').addEventListener('click',()=>{
+  const current=parseInt(localStorage.getItem('hermes_garden_reminder_interval')||'0');
+  document.querySelectorAll('.reminder-options input').forEach(r=>{
+    r.checked=parseInt(r.value)===current;
+  });
+  document.getElementById('reminder-panel').classList.add('show');
+  document.getElementById('reminder-overlay').style.display='block';
+});
+document.getElementById('reminder-cancel').addEventListener('click',()=>{
+  document.getElementById('reminder-panel').classList.remove('show');
+  document.getElementById('reminder-overlay').style.display='none';
+});
+document.getElementById('reminder-overlay').addEventListener('click',()=>{
+  document.getElementById('reminder-panel').classList.remove('show');
+  document.getElementById('reminder-overlay').style.display='none';
+});
+document.getElementById('reminder-save').addEventListener('click',()=>{
+  const selected=document.querySelector('.reminder-options input:checked');
+  if(selected){
+    const interval=parseInt(selected.value);
+    localStorage.setItem('hermes_garden_reminder_interval',String(interval));
+    setupReminder(interval);
+    document.getElementById('reminder-panel').classList.remove('show');
+    document.getElementById('reminder-overlay').style.display='none';
+    document.getElementById('hint').textContent=interval>0?`⏰ 已设置每 ${interval>=1440?'天':interval>=60?`${interval/60} 小时`:`${interval} 分钟`} 提醒`:'⏰ 已关闭提醒';
+    setTimeout(()=>{document.getElementById('hint').textContent='💫 点击获取小贴士 · 拖拽移动沙具 · 记录心情 · 写日记'},3000);
+  }
+});
+
+// ===== 提醒计时器 =====
+let reminderTimer=null,lastReminderTime=0;
+
+function setupReminder(intervalMinutes){
+  if(reminderTimer){clearInterval(reminderTimer);reminderTimer=null;}
+  if(intervalMinutes<=0)return;
+  lastReminderTime=Date.now();
+  reminderTimer=setInterval(()=>{
+    const nextTime=lastReminderTime+intervalMinutes*60*1000;
+    if(Date.now()>=nextTime){
+      showReminder();
+      lastReminderTime=Date.now();
+    }
+  },10000); // check every 10 seconds
+}
+
+function showReminder(){
+  const notice=document.getElementById('reminder-notice');
+  notice.style.display='block';
+  setTimeout(()=>{notice.style.display='none'},8000);
+}
+
+document.getElementById('reminder-notice').addEventListener('click',()=>{
+  document.getElementById('reminder-notice').style.display='none';
+  document.getElementById('btn-mood').click();
+});
+
+function updateReminderTime(){
+  lastReminderTime=Date.now();
+}
+
+// Init reminder on load
+(function(){
+  const interval=parseInt(localStorage.getItem('hermes_garden_reminder_interval')||'0');
+  if(interval>0)setupReminder(interval);
+})();
+
+// ===== 引导 =====
+document.getElementById('welcome-start').addEventListener('click',()=>{document.getElementById('welcome-overlay').style.display='none'});
+
+// ==================== 心情之花 ====================
+let flowerIdCounter=0;
+function createFlower(mood,text,timestamp){
+  const color=MOOD_COLORS[mood]||0xFFD700;
+  const fg=new THREE.Group();
+  const sm=new THREE.MeshStandardMaterial({color:0x66BB6A,emissive:0x4CAF50,emissiveIntensity:0.05});
+  const st=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.05,0.6,6),sm);st.position.y=0.3;st.castShadow=true;fg.add(st);
+  const pm=new THREE.MeshStandardMaterial({color,roughness:0.3,emissive:color,emissiveIntensity:0.08});
+  for(let i=0;i<7;i++){const a=(i/7)*Math.PI*2;const p=new THREE.Mesh(new THREE.SphereGeometry(0.09,8,8),pm);p.position.set(Math.cos(a)*0.14,0.68,Math.sin(a)*0.14);p.scale.set(1.3,0.5,1.3);fg.add(p)}
+  const cm=new THREE.MeshStandardMaterial({color:0xFFEB3B,emissive:0xFFD700,emissiveIntensity:0.3});
+  const ct=new THREE.Mesh(new THREE.SphereGeometry(0.06,8,8),cm);ct.position.y=0.68;fg.add(ct);
+  const lm=new THREE.MeshStandardMaterial({color:0x81C784});const lf=new THREE.Mesh(new THREE.SphereGeometry(0.05,6,6),lm);lf.scale.set(0.7,0.3,1.2);lf.position.set(0.1,0.2,0);lf.rotation.x=0.4;fg.add(lf);
+
+  const a=Math.random()*Math.PI*2,dist=0.5+Math.random()*4;
+  const x=Math.cos(a)*dist,z=Math.sin(a)*dist;
+  fg.position.set(x,0,z);fg.rotation.y=Math.random()*Math.PI*2;fg.scale.set(0,0,0);
+  sandGroup.add(fg);
+
+  const label=makeLabel(`🌸 ${(text||'心情').substring(0,18)}${(text||'').length>18?'...':''}`,'rgba(255,240,245,0.95)');
+  label.position.set(x,1.1,z);sandGroup.add(label);
+
+  const obj={mesh:fg,label,floatOffset:Math.random()*Math.PI*2,
+    data:{name:'心情之花',icon:'🌸',meaning:`情绪：${MOOD_NAMES[mood]}`,tip:'青春期的每一种情绪都是正常的——无论是开心、平静、难过还是生气，它们都是你内心最真实的信号。学会识别它、接纳它、温柔地照顾它，这就是成长的开始。'},
+    position:new THREE.Vector3(x,0,z),isFlower:true,flowerMood:mood,flowerText:text,flowerTime:timestamp};
+  sandObjects.push(obj);
+
+  const st2=performance.now();
+  function pf(time){const t=Math.min((time-st2)/400,1),e=1-Math.pow(1-t,3);fg.scale.setScalar(e);fg.position.y=Math.sin(e*Math.PI)*0.3;if(t<1)requestAnimationFrame(pf);else{fg.position.y=0;fg.scale.set(1,1,1)}}
+  requestAnimationFrame(pf);
+
+  document.getElementById('hint').textContent=`🌸 已记录 ${MOOD_NAMES[mood]} · 日记+1 📖`;
+  setTimeout(()=>{document.getElementById('hint').textContent='💫 点击获取小贴士 · 拖拽移动沙具 · 记录心情 · 写日记'},4000);
+}
+
+// ==================== 窗口自适应 ====================
+window.addEventListener('resize',()=>{
+  const w=window.innerWidth,h=window.innerHeight;
+  camera.aspect=w/h;camera.updateProjectionMatrix();
+  renderer.setSize(w,h);composer.setSize(w,h);
+  labelRenderer.setSize(w,h);
+});
+
+// ==================== 动画循环 ====================
+function animate(time){
+  requestAnimationFrame(animate);
+  controls.update();
+  floatTime=time*0.001;
+  sandObjects.forEach((obj,i)=>{
+    const off=obj.floatOffset||(obj.floatOffset=i*0.8);
+    const f=Math.sin(floatTime*0.8+off)*0.04;
+    if(!isDragging||obj!==dragObj)obj.mesh.position.y=f;
+    obj.label.position.y=1.3+f;
+    obj.mesh.rotation.y+=Math.sin(floatTime*0.3+off)*0.01;
+  });
+  const pp=particles.geometry.attributes.position.array;
+  for(let i=0;i<PC;i++){const idx=i*3;const th=Math.atan2(pp[idx+2],pp[idx]),r=Math.sqrt(pp[idx]*pp[idx]+pp[idx+2]*pp[idx+2]);pp[idx]=Math.cos(th+0.002)*r;pp[idx+2]=Math.sin(th+0.002)*r;pp[idx+1]+=0.003;if(pp[idx+1]>3.5)pp[idx+1]=0.3}
+  particles.geometry.attributes.position.needsUpdate=true;
+  composer.render();labelRenderer.render(scene,camera);
+}
+animate(0);
+console.log('🌱 情绪花园 v3 — 支持拖拽+日记+提醒 ✨');
+</script>
+</body>
+</html>

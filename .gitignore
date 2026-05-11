@@ -1,0 +1,7 @@
+node_modules/
+情绪花园_数字沙盘_backup.html
+情绪花园_数字沙盘_v1_backup.html
+packaging/macOS/build/
+packaging/Windows/node_modules/
+packaging/Windows/dist/
+.DS_Store

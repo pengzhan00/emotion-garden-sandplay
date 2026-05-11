@@ -1,0 +1,62 @@
+{
+  "name": "情绪花园 — 数字沙盘",
+  "short_name": "情绪花园",
+  "description": "🌱 用 Three.js 构建的互动数字沙盘，表达情绪，创造属于你的心灵花园",
+  "start_url": "/情绪花园_数字沙盘.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#FF9A9E",
+  "theme_color": "#FF9A9E",
+  "categories": ["lifestyle", "wellness", "entertainment"],
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-1024.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "apple-touch-icon": [
+    {
+      "src": "icons/icon-180.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-152.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-120.png",
+      "sizes": "120x120",
+      "type": "image/png"
+    }
+  ],
+  "splash_pages": null,
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "ios": {
+    "supports_apple_touch_icon": true,
+    "apple_touch_icon_sizes": [120, 152, 167, 180],
+    "apple_touch_startup_image": {
+      "landscape": "icons/splash-landscape.png",
+      "portrait": "icons/splash-portrait.png"
+    },
+    "apple_status_bar_style": "default"
+  }
+}

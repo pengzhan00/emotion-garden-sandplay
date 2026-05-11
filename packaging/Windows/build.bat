@@ -53,6 +53,13 @@ if exist "%HTML_FILE%" (
     echo WARNING: %HTML_FILE% not found!
     echo   The app will try to load from current directory.
 )
+
+REM Copy src/ directory for modular CSS/JS assets
+if exist "%PROJECT_ROOT%\src\" (
+    if not exist "src" mkdir src
+    xcopy /E /Y "%PROJECT_ROOT%\src\*" "src\" >nul
+    echo   ✓ Copied src/ assets
+)
 echo.
 
 REM Create assets directory if not exists

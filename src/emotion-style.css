@@ -1,0 +1,141 @@
+* { margin:0; padding:0; box-sizing:border-box; }
+body { overflow:hidden; font-family:'ZCOOL KuaiLe','PingFang SC','Noto Sans SC',sans-serif; background:linear-gradient(180deg,#FF9A9E 0%,#FAD0C4 30%,#a8e6cf 100%); }
+#canvas-container{width:100vw;height:100vh;display:block}
+
+/* ===== 标题 ===== */
+#title{position:absolute;top:16px;left:50%;transform:translateX(-50%);font-size:28px;color:#fff;text-shadow:0 3px 16px rgba(255,105,135,0.5),0 1px 4px rgba(0,0,0,0.2);background:linear-gradient(135deg,rgba(255,255,255,0.25),rgba(255,255,255,0.1));backdrop-filter:blur(12px);padding:10px 32px;border-radius:50px;letter-spacing:3px;user-select:none;white-space:nowrap;z-index:10;border:1.5px solid rgba(255,255,255,0.35);animation:titleFloat 3s ease-in-out infinite;box-shadow:0 8px 32px rgba(255,105,135,0.2)}
+@keyframes titleFloat{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-4px)}}
+
+/* ===== 提示 ===== */
+#hint{position:absolute;bottom:85px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.85);font-size:13px;text-shadow:0 2px 10px rgba(0,0,0,0.3);text-align:center;pointer-events:none;z-index:5;background:rgba(0,0,0,0.15);padding:6px 20px;border-radius:20px;backdrop-filter:blur(6px);transition:opacity 0.8s;font-family:'PingFang SC',sans-serif;letter-spacing:1px;pointer-events:none}
+
+/* ===== 工具栏 ===== */
+#toolbar{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);display:flex;gap:10px;z-index:10;background:linear-gradient(135deg,rgba(255,255,255,0.3),rgba(255,255,255,0.1));backdrop-filter:blur(16px);padding:12px 22px;border-radius:50px;border:1.5px solid rgba(255,255,255,0.3);flex-wrap:wrap;justify-content:center;box-shadow:0 8px 32px rgba(0,0,0,0.1)}
+#toolbar button{padding:9px 20px;border:none;border-radius:50px;font-size:14px;cursor:pointer;transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);font-family:'ZCOOL KuaiLe','PingFang SC',sans-serif;letter-spacing:2px;box-shadow:0 4px 15px rgba(0,0,0,0.1)}
+#toolbar button:hover{transform:translateY(-4px) scale(1.05);box-shadow:0 8px 25px rgba(0,0,0,0.18)}
+#toolbar button:active{transform:scale(0.92)}
+#btn-add{background:linear-gradient(135deg,#43e97b,#38f9d7);color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.15)}
+#btn-mood{background:linear-gradient(135deg,#f093fb,#f5576c);color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.15)}
+#btn-clear{background:linear-gradient(135deg,#4facfe,#00f2fe);color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.15)}
+#btn-diary{background:linear-gradient(135deg,#FFD700,#FFA000);color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.15)}
+#btn-reminder{background:linear-gradient(135deg,#a18cd1,#fbc2eb);color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.15)}
+
+/* ===== 信息弹窗 ===== */
+#info-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:99;display:none;backdrop-filter:blur(4px)}
+#info-panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.9);background:linear-gradient(160deg,#fff5f7,#fff);border-radius:28px;padding:30px 32px;max-width:420px;width:90%;box-shadow:0 25px 80px rgba(255,105,135,0.25),0 8px 30px rgba(0,0,0,0.12);z-index:100;display:none;border:2px solid rgba(255,200,210,0.4);animation:popIn 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards}
+@keyframes popIn{from{transform:translate(-50%,-50%) scale(0.8);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
+#info-panel .icon{font-size:56px;text-align:center;margin-bottom:4px;animation:iconBounce 0.5s ease-out}
+@keyframes iconBounce{0%{transform:scale(0)}50%{transform:scale(1.3)}100%{transform:scale(1)}}
+#info-panel .name{font-size:24px;text-align:center;margin-bottom:2px;color:#5D4037}
+#info-panel .meaning{font-size:14px;color:#e91e63;text-align:center;margin-bottom:16px;opacity:0.8;letter-spacing:1px}
+#info-panel .tip-label{font-size:13px;color:#FF6B9D;margin-bottom:6px;letter-spacing:2px}
+#info-panel .tip{font-size:15px;color:#444;line-height:1.8;padding:14px 18px;background:linear-gradient(135deg,#fce4ec,#f3e5f5);border-radius:16px;border-left:4px solid #FF6B9D;font-family:'PingFang SC',sans-serif}
+#info-panel .close-btn{display:block;margin:18px auto 0;padding:10px 36px;border:none;border-radius:50px;background:linear-gradient(135deg,#FF6B9D,#c44dff);color:#fff;font-size:16px;cursor:pointer;letter-spacing:2px;box-shadow:0 4px 15px rgba(255,107,157,0.3);transition:all 0.2s}
+#info-panel .close-btn:hover{transform:scale(1.05);box-shadow:0 6px 20px rgba(255,107,157,0.4)}
+
+/* ===== 心情记录弹窗 ===== */
+#mood-dialog{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.9);background:linear-gradient(160deg,#fff5f7,#fff);border-radius:28px;padding:30px 32px;max-width:400px;width:90%;box-shadow:0 25px 80px rgba(255,105,135,0.25);z-index:100;display:none;border:2px solid rgba(255,200,210,0.4);animation:popIn 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards}
+#mood-dialog h3{font-size:22px;text-align:center;margin-bottom:4px;color:#5D4037;letter-spacing:2px}
+#mood-dialog .mood-time{font-size:12px;text-align:center;color:#999;margin-bottom:14px;letter-spacing:1px}
+#mood-dialog .mood-btns{display:flex;gap:12px;justify-content:center;margin-bottom:16px;flex-wrap:wrap}
+#mood-dialog .mood-btn{width:60px;height:60px;border-radius:50%;border:3px solid transparent;font-size:28px;cursor:pointer;transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);display:flex;align-items:center;justify-content:center;background:#f5f5f5;box-shadow:0 4px 12px rgba(0,0,0,0.06)}
+#mood-dialog .mood-btn:hover{transform:scale(1.2) translateY(-3px)}
+#mood-dialog .mood-btn.selected{transform:scale(1.15);box-shadow:0 6px 20px rgba(0,0,0,0.15)}
+#mood-dialog textarea{width:100%;padding:12px 16px;border:2px solid #f0e0e6;border-radius:16px;font-size:14px;font-family:'PingFang SC',sans-serif;resize:none;height:75px;outline:none;transition:border-color 0.3s;background:#fef7f9}
+#mood-dialog textarea:focus{border-color:#FF6B9D;box-shadow:0 0 0 4px rgba(255,107,157,0.1)}
+#mood-dialog .submit-row{display:flex;gap:10px;margin-top:14px;justify-content:flex-end}
+#mood-dialog .submit-row button{padding:9px 24px;border:none;border-radius:50px;font-size:15px;cursor:pointer;font-family:'ZCOOL KuaiLe','PingFang SC',sans-serif;letter-spacing:2px;transition:all 0.2s}
+#mood-dialog .mood-cancel{background:#e0e0e0;color:#666}
+#mood-dialog .mood-ok{background:linear-gradient(135deg,#f093fb,#f5576c);color:#fff;box-shadow:0 4px 15px rgba(245,87,108,0.3)}
+#mood-dialog .mood-ok:hover{transform:scale(1.03)}
+
+/* ===== 日记面板 ===== */
+#diary-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:99;display:none;backdrop-filter:blur(6px)}
+#diary-panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.9);width:480px;max-width:94vw;max-height:80vh;background:linear-gradient(160deg,#fff8f0,#fff);border-radius:28px;box-shadow:0 30px 80px rgba(0,0,0,0.25);z-index:100;display:none;border:2px solid rgba(255,200,180,0.4);animation:popIn 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards;flex-direction:column;overflow:hidden}
+#diary-panel.show{display:flex}
+#diary-header{padding:20px 24px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f0e0d8;flex-shrink:0}
+#diary-header h2{font-size:22px;color:#5D4037;letter-spacing:2px}
+#diary-header .diary-close{width:36px;height:36px;border:none;border-radius:50%;background:#f0e0d8;font-size:18px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;color:#8D6E63}
+#diary-header .diary-close:hover{background:#e0c8c0;transform:scale(1.1)}
+#diary-filter{display:flex;gap:6px;padding:10px 24px;border-bottom:1px solid #f0e0d8;flex-shrink:0}
+#diary-filter button{padding:4px 14px;border:1.5px solid #e0c8c0;border-radius:20px;background:transparent;font-size:13px;cursor:pointer;transition:all 0.2s;font-family:'ZCOOL KuaiLe','PingFang SC',sans-serif;color:#8D6E63;letter-spacing:1px}
+#diary-filter button:hover{background:#f5e8e0}
+#diary-filter button.active{background:#FF6B9D;color:#fff;border-color:#FF6B9D}
+#diary-stats{display:flex;gap:14px;padding:8px 24px 4px;flex-shrink:0;font-size:12px;color:#999;font-family:'PingFang SC',sans-serif}
+#diary-entries{flex:1;overflow-y:auto;padding:10px 24px 20px;min-height:100px}
+#diary-entries::-webkit-scrollbar{width:4px}
+#diary-entries::-webkit-scrollbar-thumb{background:#e0c8c0;border-radius:4px}
+.diary-entry{display:flex;gap:12px;padding:12px 14px;margin-bottom:8px;border-radius:16px;background:#fef9f5;border:1px solid #f5e8e0;transition:all 0.2s;align-items:flex-start;cursor:default}
+.diary-entry:hover{background:#fcf0ea;transform:translateX(4px)}
+.diary-entry .de-mood{font-size:28px;flex-shrink:0;width:40px;text-align:center;line-height:1}
+.diary-entry .de-body{flex:1;min-width:0}
+.diary-entry .de-time{font-size:12px;color:#bbb;font-family:'PingFang SC',sans-serif;margin-bottom:2px}
+.diary-entry .de-text{font-size:14px;color:#555;line-height:1.6;font-family:'PingFang SC',sans-serif;word-break:break-word}
+.diary-entry .de-delete{background:none;border:none;color:#ddd;cursor:pointer;font-size:16px;padding:2px 4px;flex-shrink:0;transition:color 0.2s;line-height:1}
+.diary-entry .de-delete:hover{color:#FF6B6B}
+.diary-empty{text-align:center;padding:40px 0;color:#ccc;font-size:16px;letter-spacing:2px}
+.diary-empty .big{font-size:48px;display:block;margin-bottom:10px}
+.diary-export{padding:6px 14px;border:none;border-radius:20px;background:#f5e8e0;font-size:12px;cursor:pointer;font-family:'PingFang SC',sans-serif;color:#8D6E63;transition:all 0.2s}
+.diary-export:hover{background:#e8d5cc}
+
+/* ===== 提醒设置 ===== */
+#reminder-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:99;display:none;backdrop-filter:blur(6px)}
+#reminder-panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.9);width:360px;max-width:90vw;background:linear-gradient(160deg,#f3e8ff,#fff);border-radius:28px;padding:28px 30px;box-shadow:0 30px 80px rgba(0,0,0,0.25);z-index:100;display:none;border:2px solid rgba(200,180,255,0.4);animation:popIn 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards}
+#reminder-panel.show{display:block}
+#reminder-panel h3{font-size:20px;text-align:center;color:#5D4037;margin-bottom:16px;letter-spacing:2px}
+#reminder-panel label{display:block;font-size:14px;color:#666;margin-bottom:6px;font-family:'PingFang SC',sans-serif}
+.reminder-options{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
+.reminder-options label{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:14px;border:2px solid #e8d8f0;cursor:pointer;transition:all 0.2s;font-family:'PingFang SC',sans-serif;font-size:15px;color:#555}
+.reminder-options label:hover{border-color:#ce93d8;background:#faf0ff}
+.reminder-options label input[type=radio]{accent-color:#ce93d8;width:16px;height:16px}
+#reminder-panel .submit-row{display:flex;gap:10px;margin-top:8px;justify-content:flex-end}
+#reminder-panel .submit-row button{padding:9px 24px;border:none;border-radius:50px;font-size:15px;cursor:pointer;font-family:'ZCOOL KuaiLe','PingFang SC',sans-serif;letter-spacing:2px;transition:all 0.2s}
+#reminder-cancel{background:#e0e0e0;color:#666}
+#reminder-save{background:linear-gradient(135deg,#a18cd1,#fbc2eb);color:#fff;box-shadow:0 4px 15px rgba(161,140,209,0.3)}
+
+/* ===== 提醒通知 ===== */
+#reminder-notice{position:absolute;top:70px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#fff5f7,rgba(255,255,255,0.95));backdrop-filter:blur(12px);padding:14px 28px;border-radius:50px;box-shadow:0 8px 30px rgba(255,105,135,0.2);z-index:50;display:none;border:1.5px solid rgba(255,200,210,0.4);animation:noticeSlide 0.4s cubic-bezier(0.34,1.56,0.64,1);cursor:pointer;white-space:nowrap;font-size:16px;color:#5D4037;letter-spacing:2px}
+@keyframes noticeSlide{from{transform:translateX(-50%) translateY(-20px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
+#reminder-notice span{color:#FF6B9D}
+
+/* ===== 引导页 ===== */
+#welcome-overlay{position:fixed;inset:0;background:radial-gradient(ellipse at center,rgba(0,0,0,0.3),rgba(0,0,0,0.55));z-index:200;display:flex;align-items:center;justify-content:center}
+#welcome-card{background:linear-gradient(160deg,#fff5f7,#fff0f6,#fce4ec);border-radius:32px;padding:38px 34px;max-width:440px;width:90%;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,0.3);border:2px solid rgba(255,255,255,0.5);animation:popIn 0.5s cubic-bezier(0.34,1.56,0.64,1)}
+#welcome-card h2{font-size:28px;margin-bottom:2px;color:#5D4037;letter-spacing:2px}
+#welcome-card .sub{font-size:14px;color:#e91e63;margin-bottom:20px;letter-spacing:3px;opacity:0.7}
+#welcome-card p{font-size:15px;color:#555;line-height:1.8;margin-bottom:10px;text-align:left;padding-left:8px;font-family:'PingFang SC',sans-serif}
+#welcome-card .start-btn{margin-top:18px;padding:14px 48px;border:none;border-radius:50px;background:linear-gradient(135deg,#FF6B9D,#c44dff);color:#fff;font-size:18px;cursor:pointer;letter-spacing:3px;box-shadow:0 6px 25px rgba(255,107,157,0.35);transition:all 0.25s}
+#welcome-card .start-btn:hover{transform:scale(1.05) translateY(-2px);box-shadow:0 10px 35px rgba(255,107,157,0.4)}
+
+/* ===== 沙具选择面板 ===== */
+#pick-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:99;display:none;backdrop-filter:blur(4px)}
+#pick-panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.9);width:520px;max-width:92vw;background:linear-gradient(160deg,#fff5f7,#fff);border-radius:28px;padding:24px 20px;box-shadow:0 25px 80px rgba(255,105,135,0.25);z-index:100;display:none;border:2px solid rgba(255,200,210,0.4);animation:popIn 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards}
+#pick-panel h3{font-size:20px;text-align:center;color:#5D4037;margin-bottom:6px;letter-spacing:2px}
+#pick-panel .sub{font-size:12px;text-align:center;color:#999;margin-bottom:16px;letter-spacing:1px}
+#pick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.pick-item{display:flex;flex-direction:column;align-items:center;padding:14px 8px 12px;border-radius:18px;border:2px solid #f0e0e6;cursor:pointer;transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);background:#fff}
+.pick-item:hover{transform:translateY(-4px) scale(1.03);border-color:#FF6B9D;box-shadow:0 8px 20px rgba(255,107,157,0.15);background:#fff8fa}
+.pick-item:active{transform:scale(0.95)}
+.pick-item .pi-icon{font-size:36px;line-height:1;margin-bottom:4px}
+.pick-item .pi-name{font-size:15px;color:#5D4037;letter-spacing:1px}
+.pick-item .pi-meaning{font-size:11px;color:#999;font-family:'PingFang SC',sans-serif;margin-top:2px}
+#pick-close{display:block;margin:14px auto 0;padding:8px 32px;border:none;border-radius:50px;color:#999;font-size:13px;cursor:pointer;letter-spacing:2px;transition:all 0.2s;font-family:'PingFang SC',sans-serif}
+#pick-close:hover{background:#f0e0e6;color:#666}
+
+/* ===== 小贴士展开模式 ===== */
+#info-tip-short{font-size:16px;color:#5D4037;padding:12px 16px;background:linear-gradient(135deg,#fff0f0,#fff5f7);border-radius:14px;border-left:4px solid #FF6B9D;font-family:'PingFang SC',sans-serif;line-height:1.6;margin-bottom:8px}
+#info-expand-btn{display:block;margin:4px auto 10px;padding:6px 18px;border:none;border-radius:50px;background:linear-gradient(135deg,#fce4ec,#f3e5f5);color:#c44dff;font-size:13px;cursor:pointer;letter-spacing:1px;transition:all 0.2s;font-family:'PingFang SC',sans-serif}
+#info-expand-btn:hover{background:linear-gradient(135deg,#f8d0da,#ede0f0);transform:scale(1.03)}
+#info-tip-long{display:none}
+#info-tip-long.show{display:block}
+
+@media(max-width:600px){
+  #title{font-size:20px;padding:8px 18px;top:12px;white-space:normal}
+  #toolbar{padding:10px 14px;gap:6px}
+  #toolbar button{font-size:12px;padding:7px 12px}
+  #diary-panel{max-height:90vh}
+  #diary-entries{padding:8px 16px 14px}
+  .diary-entry{padding:10px 12px}
+  #pick-grid{grid-template-columns:repeat(2,1fr)}
+  #pick-panel{width:340px;padding:18px 14px}
+}

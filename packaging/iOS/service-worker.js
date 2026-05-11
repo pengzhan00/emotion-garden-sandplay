@@ -14,6 +14,8 @@ const CACHE_VERSION = 'v1';
 // 要预缓存的核心资源
 const PRECACHE_URLS = [
   '/',
+  '/src/emotion-style.css',
+  '/src/emotion-bundle.js',
   '/情绪花园_数字沙盘.html',
   '/manifest.json',
   '/icons/icon-192.png',

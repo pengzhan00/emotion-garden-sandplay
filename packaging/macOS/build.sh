@@ -72,6 +72,12 @@ for asset in "$SOURCE_DIR"/*; do
         cp "$asset" "$RESOURCES_DIR/$basename" 2>/dev/null || true
     fi
 done
+# Copy src/ directory for modular CSS/JS assets
+if [ -d "$SOURCE_DIR/src" ]; then
+    mkdir -p "$RESOURCES_DIR/src"
+    cp -R "$SOURCE_DIR/src/"* "$RESOURCES_DIR/src/" 2>/dev/null || true
+    echo "  ✓ src/ assets copied"
+fi
 echo "  ✓ Additional assets copied (if any)"
 
 echo ""

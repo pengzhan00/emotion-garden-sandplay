@@ -26,6 +26,7 @@
   <button id="btn-reminder">⏰ 提醒</button>
   <button id="btn-clear">🌀 清空</button>
   <button id="btn-story" style="background:linear-gradient(135deg,#FFB74D,#FF9800);color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.15)">📖 讲故事</button>
+  <button id="btn-export-blender" style="background:linear-gradient(135deg,#7C4DFF,#651FFF);color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.15)">📦 导出 Blender</button>
 </div>
 
 <!-- 沙具选择面板 -->
@@ -140,6 +141,38 @@
 }
 </script>
 
-<script type="module" src="src/emotion-bundle.js"></script>
+<script type="module" src="src/emotion-bundle.js?v=2"></script>
+<script>
+// 自动布置场景脚本
+window.addEventListener('DOMContentLoaded', () => {
+  // 等待场景初始化完成
+  const waitForScene = setInterval(() => {
+    if (window.__sand && window.__sand.placeItem) {
+      clearInterval(waitForScene);
+      const sand = window.__sand;
+
+      // 清掉所有已摆好的沙具（除了初始化的那些），重新布一个更漂亮的局
+      // 先记录多种心情种花
+
+      // 心情1：开心
+      sand.createFlower('happy', '今天是个好日子，阳光洒在窗台上', Date.now() - 3600000 * 2);
+      
+      // 心情2：平静
+      setTimeout(() => sand.createFlower('calm', '午后读了一本好书，内心很安宁', Date.now() - 3600000), 100);
+      
+      // 心情3：有点难过但走出来了
+      setTimeout(() => sand.createFlower('sad', '想家了，但跟妈妈视频后好多了', Date.now() - 1800000), 200);
+      
+      // 心情4：开心 - 新的开始
+      setTimeout(() => sand.createFlower('happy', '情绪花园项目完成！期待更多探索', Date.now()), 300);
+      
+      // 心情5：平静 - 晚上的反思
+      setTimeout(() => sand.createFlower('calm', '整理思绪，准备好迎接明天', Date.now() + 1000), 400);
+
+      console.log('🌺 场景已布置完成！点击导出按钮即可导出 GLB');
+    }
+  }, 200);
+});
+</script>
 </body>
 </html>

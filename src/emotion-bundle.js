@@ -4,6 +4,10 @@ import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+
+// ==================== Debug helpers for export workflow ====================
+window.__sand = { placeItem: null, createFlower: null, ITEMS_DATA: null, sandObjects: null, MOOD_NAMES: null, MOOD_COLORS: null, addDiaryEntry: null, getDiary: null };
 
 // ==================== 沙具数据 ====================
 const ITEMS_DATA = [
@@ -62,6 +66,10 @@ const MOOD_EMOJIS = { happy:'😊', calm:'😌', sad:'😢', angry:'😤' };
 const MOOD_NAMES = { happy:'开心', calm:'平静', sad:'难过', angry:'生气' };
 const MOOD_LABELS = { happy:'🌻', calm:'💙', sad:'🩶', angry:'❤️' };
 const STORAGE_KEY = 'hermes_garden_diary';
+
+// Expose for debug automation
+window.__sand.MOOD_NAMES = MOOD_NAMES;
+window.__sand.MOOD_COLORS = MOOD_COLORS;
 
 // ==================== 场景 ====================
 const container = document.getElementById('canvas-container');
@@ -283,6 +291,9 @@ function buildMesh(data){
 }
 
 function placeItem(data, x, z, animateIn=false){
+  window.__sand.placeItem = placeItem;
+  window.__sand.sandObjects = sandObjects;
+  window.__sand.ITEMS_DATA = ITEMS_DATA;
   const mesh=buildMesh(data);mesh.position.set(x,0,z);mesh.rotation.y=Math.random()*Math.PI*2;
   if(animateIn)mesh.scale.set(0,0,0);
   sandGroup.add(mesh);
@@ -580,15 +591,18 @@ function enhancedRenderDiary(filter){
 }
 renderDiary = enhancedRenderDiary;
 function getDiary(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY))||[]}catch{return[]}}
+window.__sand.getDiary = getDiary;
 function saveDiary(entries){localStorage.setItem(STORAGE_KEY,JSON.stringify(entries))}
 
 function addDiaryEntry(mood,text,timestamp){
+  window.__sand.addDiaryEntry = addDiaryEntry;
   const entries=getDiary();
   entries.unshift({id:Date.now(),timestamp,mood,emoji:MOOD_EMOJIS[mood],text:text||'',color:MOOD_COLORS[mood]});
   saveDiary(entries);
   renderDiary(getActiveFilter());
   updateReminderTime(); // reset reminder after recording
 }
+window.__sand.addDiaryEntry = addDiaryEntry;
 
 function deleteDiaryEntry(id){
   let entries=getDiary();
@@ -1270,6 +1284,7 @@ function createFlower(mood,text,timestamp){
   document.getElementById('hint').textContent=`🌸 已记录 ${MOOD_NAMES[mood]} · 日记+1 📖`;
   setTimeout(()=>{document.getElementById('hint').textContent='💫 点击获取小贴士 · 拖拽移动沙具 · 记录心情 · 写日记'},4000);
 }
+window.__sand.createFlower = createFlower;
 
 // ==================== 窗口自适应 ====================
 window.addEventListener('resize',()=>{
@@ -1297,4 +1312,86 @@ function animate(time){
   composer.render();labelRenderer.render(scene,camera);
 }
 animate(0);
+
+// ==================== 导出到 Blender (GLB) ====================
+document.getElementById('btn-export-blender').addEventListener('click', () => {
+  const btn = document.getElementById('btn-export-blender');
+  btn.textContent = '⏳ 导出中...';
+  btn.disabled = true;
+
+  // 构建导出场景：只包含 3D 模型，不包含 CSS2D 标签
+  const exportScene = new THREE.Scene();
+  exportScene.background = new THREE.Color(0xf5f0eb); // 干净的浅色背景
+
+  // 复制灯光（让 Blender 里能看）
+  const lightClones = [ambient, hemi, dir, rim, fill];
+  lightClones.forEach(l => {
+    const clone = l.clone();
+    // 方向光需要保留 shadow 设置
+    if (l.isDirectionalLight) {
+      clone.shadow.mapSize.set(1024, 1024);
+    }
+    exportScene.add(clone);
+  });
+
+  // 复制地面
+  const groundClone = ground.clone();
+  exportScene.add(groundClone);
+
+  // 复制所有沙具（含心情之花），重置到基础位置
+  sandObjects.forEach(obj => {
+    const clone = obj.mesh.clone();
+    clone.position.copy(obj.position);
+    clone.position.y = 0;
+    clone.scale.set(1, 1, 1);
+    // 清除动画中的旋转偏移
+    clone.rotation.y = 0;
+    exportScene.add(clone);
+  });
+
+  const exporter = new GLTFExporter();
+  exporter.parse(
+    exportScene,
+    (result) => {
+      const blob = new Blob([result], { type: 'application/octet-stream' });
+      // Save to global for console capture
+      window.__lastGLB = blob;
+      // Also POST to local server for file save
+      const reader = new FileReader();
+      reader.onload = function() {
+        const base64 = reader.result.split(',')[1];
+        fetch('/save', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({filename: '情绪花园_沙盘场景.glb', data: base64})
+        }).then(r => r.json()).then(d => {
+          console.log('GLB saved to:', d.path, '(' + d.size + ' bytes)');
+        }).catch(e => console.error('Save POST failed:', e));
+      };
+      reader.readAsDataURL(blob);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = '情绪花园_沙盘场景.glb';
+      a.click();
+      URL.revokeObjectURL(url);
+      btn.textContent = '✅ 已导出！';
+      document.getElementById('hint').textContent = '📦 已导出 情绪花园_沙盘场景.glb — 用 Blender 打开看看吧！';
+      setTimeout(() => {
+        btn.textContent = '📦 导出 Blender';
+        btn.disabled = false;
+      }, 3000);
+    },
+    (error) => {
+      console.error('GLTF 导出失败:', error);
+      btn.textContent = '❌ 失败';
+      document.getElementById('hint').textContent = '❌ 导出失败，查看控制台 (Cmd+Opt+I)';
+      setTimeout(() => {
+        btn.textContent = '📦 导出 Blender';
+        btn.disabled = false;
+      }, 3000);
+    },
+    { binary: true, trs: true, onlyVisible: true }
+  );
+});
 console.log('🌱 情绪花园 v4.0 — 沙具选择·小贴士·趋势图·成就·报告·12沙具 ✨');

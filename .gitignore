@@ -5,3 +5,4 @@ packaging/macOS/build/
 packaging/Windows/node_modules/
 packaging/Windows/dist/
 .DS_Store
+server.py
